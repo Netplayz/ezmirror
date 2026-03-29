@@ -59,7 +59,6 @@ sudo bash setup.sh --unattended
 | `opensuse` | openSUSE | ~2 TiB | 12h |
 | `raspios` | Raspberry Pi OS | ~200 GiB | 12h |
 | `popos` | Pop!_OS | ~300 GiB | 12h |
-| `nyarch` | NyarchLinux | ~20 GiB | 24h |
 
 Plus any number of custom mirrors via the interactive panel or `ezmirror-manage`.
 
