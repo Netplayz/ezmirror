@@ -130,7 +130,7 @@ Each distro has its own mirror submission process — check their documentation.
 GPL-3.0
 
 ## Screenshots
-<img width="918" height="129" alt="Screenshot From 2026-03-29 13-43-11" src="https://github.com/user-attachments/assets/f28030fc-26d3-4e07-a3e8-4292546b5348" />
+<img width="1864" height="940" alt="Screenshot From 2026-03-29 09-56-57" src="https://github.com/user-attachments/assets/350660dc-66bd-4c11-8683-07a801910db3" />
 <img width="1864" height="940" alt="Screenshot From 2026-03-29 09-57-37" src="https://github.com/user-attachments/assets/b4b5a9be-6a76-459f-a10b-413e07e3658a" />
 <img width="1864" height="940" alt="Screenshot From 2026-03-29 09-57-22" src="https://github.com/user-attachments/assets/ed291a5a-a717-4506-a64b-6cd164320672" />
 
