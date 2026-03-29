@@ -1,0 +1,6 @@
+files.json
+SHA256SUMS
+*.iso
+*.part
+*.log
+.DS_Store
