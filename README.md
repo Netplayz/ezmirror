@@ -1,4 +1,5 @@
 # ezmirror
+<p align="center">
 <img width="500" height="500" alt="EZMIRROR-removebg-preview" src="https://github.com/user-attachments/assets/816e7b15-6cc2-464a-a13c-c49643172774" />
 </p>
 A self-hostable Linux distribution mirror infrastructure. Interactive setup, multi-distro support, automated sync, and a clean web frontend.
