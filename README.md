@@ -7,7 +7,7 @@ A self-hostable Linux distribution mirror infrastructure. Interactive setup, mul
 ## Quick Start
 
 ```bash
-gh repo clone Netplayz/ezmirror
+git clone https://github.com/Netplayz/ezmirror.git
 cd ezmirror
 sudo bash setup.sh
 ```
