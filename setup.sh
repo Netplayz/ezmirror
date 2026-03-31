@@ -673,7 +673,7 @@ cat > "${WEBROOT}/index.html" << HOMEOF
   </div>
 </div>
 <footer>
-  <span>${LAB_NAME} — powered by <a href="https://github.com/${GH_USER}" target="_blank" rel="noopener">ezmirror</a></span>
+  <span>${LAB_NAME} — powered by <a href="https://github.com/netplayz/ezmirror" target="_blank" rel="noopener">ezmirror</a></span>
   <span><a href="/pub/">Browse all files →</a></span>
 </footer>
 <script>
