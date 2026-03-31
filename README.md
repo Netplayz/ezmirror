@@ -45,7 +45,7 @@ sudo bash setup.sh --unattended
 | `/etc/systemd/system/ezmirror-sync.{service,timer}` | Systemd sync timer |
 | `/etc/logrotate.d/ezmirror` | Log rotation config |
 
-## Supported Mirrors
+## Default Supported Mirrors
 
 | Slug | Distro | Size | Default Interval |
 |------|--------|------|-----------------|
@@ -70,7 +70,7 @@ Plus any number of custom mirrors via the interactive panel or `ezmirror-manage`
 
 ```bash
 # Sync
-sudo ezmirror-sync                    # sync all due mirrors (respects per-mirror intervals)
+sudo ezmirror-sync                    # sync all due mirrors (respects per-mirror intervals.) If if you have just uploaded files you must use this command.
 sudo ezmirror-sync --force            # sync all, ignoring intervals
 sudo ezmirror-sync --dry-run          # simulate without writing
 sudo ezmirror-sync --mirror=arch      # sync one mirror now
