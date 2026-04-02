@@ -137,3 +137,4 @@ GPL-3.0
 <img width="1864" height="940" alt="Screenshot From 2026-03-29 09-57-37" src="https://github.com/user-attachments/assets/b4b5a9be-6a76-459f-a10b-413e07e3658a" />
 <img width="1864" height="940" alt="Screenshot From 2026-03-29 09-57-22" src="https://github.com/user-attachments/assets/ed291a5a-a717-4506-a64b-6cd164320672" />
 
+``Made with the assistance of Claude Haiku 4.5, A.S.A.S 13B paramatner internal model.``
