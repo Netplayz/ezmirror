@@ -1058,6 +1058,7 @@ nginx_common="
         alias ${PUB_DIR}/;
         index index.html;
         sendfile on; tcp_nopush on; tcp_nodelay on;
+        autoindex on;
     }
  
     location / { try_files \$uri \$uri/ =404; }
@@ -1528,6 +1529,7 @@ generate_nginx_mirrors_conf() {
             echo "    alias ${LINUX_DIR}/${slug}/;"
             echo "    index index.html;"
             echo "    sendfile on; tcp_nopush on; tcp_nodelay on;"
+            echo "    autoindex on;"
             echo "}"
             echo ""
         done
