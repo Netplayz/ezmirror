@@ -1045,7 +1045,7 @@ for slug in "${SELECTED_MIRRORS[@]}"; do
         alias ${LINUX_DIR}/${slug}/;
         index index.html;
         sendfile on; tcp_nopush on; tcp_nodelay on;
-        autoindex on;
+        autoindex off;
     }
 "
 done
@@ -1066,7 +1066,7 @@ nginx_common="
         alias ${PUB_DIR}/;
         index index.html;
         sendfile on; tcp_nopush on; tcp_nodelay on;
-        autoindex on;
+        autoindex off;
     }
 ${mirror_locations}
     location / { try_files \$uri \$uri/ =404; }
