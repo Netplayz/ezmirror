@@ -2154,8 +2154,12 @@ echo ""
 
 # Timer status
 if systemctl is-active ezmirror-sync.timer &>/dev/null; then
-    next=$(systemctl show ezmirror-sync.timer --property=NextElapseUSecRealtime --value 2>/dev/null | \
-           awk '{printf "%s", strftime("%Y-%m-%d %H:%M UTC", $1/1000000)}' 2>/dev/null || echo "unknown")
+   next_usec=$(systemctl show ezmirror-sync.timer --property=NextElapseUSecRealtime --value 2>/dev/null || echo "0")
+if [[ "$next_usec" -gt 1000000000000000 ]]; then
+    next=$(echo "$next_usec" | awk '{printf "%s", strftime("%Y-%m-%d %H:%M UTC", $1/1000000)}')
+else
+    next="pending/not scheduled"
+fi
     echo -e "  ${G}✓${N} Timer active. Next run: ${next}"
 else
     echo -e "  ${Y}!${N} ezmirror-sync.timer is not active."
