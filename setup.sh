@@ -67,7 +67,6 @@ MIRROR_CATALOG=(
     "opensuse|openSUSE|Community-supported SUSE variants|rsync://rsync.opensuse.org/opensuse/|rsync|~2.0 TiB|large|12h"
     "raspios|Raspberry Pi OS|Official OS for Raspberry Pi hardware|rsync://archive.raspberrypi.com/|rsync|~200 GiB||12h"
     "popos|Pop!_OS|System76 Ubuntu-based developer distro|rsync://apt.pop-os.org/release/|rsync|~300 GiB||12h"
-    "nyarch|NyarchLinux|Arch-based anime desktop (SourceForge)|nyarch-sf:/home/frs/project/nyarchlinux/|rclone-sftp|~20 GiB||24h"
     )
 
 SELECTED_MIRRORS=()
