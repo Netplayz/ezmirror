@@ -10,9 +10,9 @@
 #   EZMIRROR_WEBHOOK    EZMIRROR_EMAIL
 #   EZMIRROR_TORRENTS   (yes/no)
 # =============================================================================
- 
+
 set -euo pipefail
- 
+
 R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m' C='\033[0;36m' B='\033[1m' N='\033[0m'
 ok()   { echo -e "  ${G}✓${N}  $*"; }
 info() { echo -e "  ${C}→${N}  $*"; }
@@ -20,13 +20,13 @@ warn() { echo -e "  ${Y}!${N}  $*"; }
 die()  { echo -e "  ${R}✗${N}  $*" >&2; exit 1; }
 hdr()  { echo -e "\n${B}── $* ──${N}"; }
 rule() { printf '  %s\n' "$(printf '─%.0s' {1..66})"; }
- 
+
 [[ $EUID -eq 0 ]] || die "Run with sudo: sudo bash setup.sh"
- 
+
 # ── Unattended flag ───────────────────────────────────────────────────────────
 UNATTENDED=false
 for _arg in "$@"; do [[ "$_arg" == "--unattended" ]] && UNATTENDED=true; done
- 
+
 ask() {
     # ask "prompt text" VARNAME "default" [ENV_VAR]
     local prompt="$1" varname="$2" default="$3" envvar="${4:-}"
@@ -39,7 +39,7 @@ ask() {
     read -rp "  $prompt [$default]: " _tmp
     printf -v "$varname" '%s' "${_tmp:-$default}"
 }
- 
+
 # =============================================================================
 # Mirror catalog
 # Format: slug|Display Name|Description|Upstream URL|Sync Method|Est. Size|warn|interval|bandwidth|retention_days|retention_max_gib
@@ -51,7 +51,7 @@ ask() {
 # retention_days     : delete files older than N days; 0 = keep forever (default)
 # retention_max_gib  : delete oldest files if total exceeds N GiB; 0 = no limit (default)
 # =============================================================================
- 
+
 MIRROR_CATALOG=(
     "debian|Debian GNU/Linux|Stable, testing, and unstable package archive|rsync://rsync.debian.org/debian/|rsync|~2.0 TiB|large|12h"
     "ubuntu|Ubuntu|Canonical packages and LTS/current releases|rsync://rsync.ubuntu.com/ubuntu/|rsync|~2.0 TiB|large|12h"
@@ -67,24 +67,25 @@ MIRROR_CATALOG=(
     "opensuse|openSUSE|Community-supported SUSE variants|rsync://rsync.opensuse.org/opensuse/|rsync|~2.0 TiB|large|12h"
     "raspios|Raspberry Pi OS|Official OS for Raspberry Pi hardware|rsync://archive.raspberrypi.com/|rsync|~200 GiB||12h"
     "popos|Pop!_OS|System76 Ubuntu-based developer distro|rsync://apt.pop-os.org/release/|rsync|~300 GiB||12h"
+    "nyarch|NyarchLinux|Arch-based anime desktop (SourceForge)|nyarch-sf:/home/frs/project/nyarchlinux/|rclone-sftp|~20 GiB||24h"
     )
- 
+
 SELECTED_MIRRORS=()
 CUSTOM_MIRRORS=()
 declare -A MIRROR_CREDS
- 
+
 # =============================================================================
 # Panel helpers
 # =============================================================================
- 
+
 catalog_field() { local entry="${MIRROR_CATALOG[$1]}"; IFS='|' read -ra p <<< "$entry"; echo "${p[$2]:-}"; }
- 
+
 is_selected() {
     local slug="$1"
     for s in "${SELECTED_MIRRORS[@]:-}"; do [[ "$s" == "$slug" ]] && return 0; done
     return 1
 }
- 
+
 toggle_mirror() {
     local slug="$1" new=() found=false
     for s in "${SELECTED_MIRRORS[@]:-}"; do
@@ -92,7 +93,7 @@ toggle_mirror() {
     done
     [[ "$found" == true ]] && SELECTED_MIRRORS=("${new[@]:-}") || SELECTED_MIRRORS+=("$slug")
 }
- 
+
 get_mirror_entry() {
     local target="$1"
     for (( i=0; i<${#MIRROR_CATALOG[@]}; i++ )); do
@@ -104,7 +105,7 @@ get_mirror_entry() {
         [[ "$s" == "$target" ]] && { echo "$cm"; return; }
     done
 }
- 
+
 show_panel() {
     clear
     echo -e "\n${B}  Mirror Selection${N}"
@@ -113,21 +114,21 @@ show_panel() {
     rule
     printf "  %-3s  %-4s  %-14s  %-30s  %-10s  %s\n" "#" "Sel" "Slug" "Name" "Est. Size" "Interval"
     rule
- 
+
     local catalog_count="${#MIRROR_CATALOG[@]}"
     for (( i=0; i<catalog_count; i++ )); do
         local slug name size warn interval
         slug=$(catalog_field "$i" 0); name=$(catalog_field "$i" 1)
         size=$(catalog_field "$i" 5); warn=$(catalog_field "$i" 6)
         interval=$(catalog_field "$i" 7); interval="${interval:-6h}"
- 
+
         local marker="[ ]"; is_selected "$slug" && marker="[${G}✓${N}]"
         local warn_str=""; [[ "$warn" == "large" ]] && warn_str=" ${Y}⚠${N}"
- 
+
         printf "  %-3s  " "$(( i+1 ))"
         echo -e "${marker}  $(printf '%-14s  %-30s  %-10s' "$slug" "$name" "$size")  ${interval}${warn_str}"
     done
- 
+
     local custom_start=$(( catalog_count + 1 ))
     for (( j=0; j<${#CUSTOM_MIRRORS[@]}; j++ )); do
         local cslug cname csize cmethod cinterval
@@ -136,19 +137,19 @@ show_panel() {
         csize=$(echo "${CUSTOM_MIRRORS[$j]}" | cut -d'|' -f6)
         cmethod=$(echo "${CUSTOM_MIRRORS[$j]}" | cut -d'|' -f5)
         cinterval=$(echo "${CUSTOM_MIRRORS[$j]}" | cut -d'|' -f8); cinterval="${cinterval:-6h}"
- 
+
         local cmarker="[ ]"; is_selected "$cslug" && cmarker="[${G}✓${N}]"
         local type_str=""
         [[ "$cmethod" == "original" ]] && type_str=" ${C}[origin]${N}"
         [[ "$cmethod" == "mirror"   ]] && type_str=" ${Y}[mirror]${N}"
- 
+
         printf "  %-3s  " "$(( custom_start + j ))"
         echo -e "${cmarker}  $(printf '%-14s  %-30s  %-10s' "$cslug" "$cname" "$csize")  ${cinterval}${type_str}"
     done
- 
+
     local add_n=$(( catalog_count + ${#CUSTOM_MIRRORS[@]} + 1 ))
     printf "  %-3s  %s\n" "$add_n" "     + Add custom mirror…"
- 
+
     rule
     echo ""
     echo -e "  Selected: ${B}${#SELECTED_MIRRORS[@]}${N} mirror(s)   ${Y}⚠${N} = multi-TiB   ${C}[origin]${N} = no upstream   ${Y}[mirror]${N} = self-hosted upstream"
@@ -156,17 +157,17 @@ show_panel() {
     echo -e "  Type a number to toggle  •  ${B}a${N} all  •  ${B}n${N} none  •  ${B}done${N} to continue"
     echo ""
 }
- 
+
 prompt_custom_mirror() {
     echo ""
     echo -e "${B}  Add Custom Mirror${N}"
     echo ""
- 
+
     local cslug cname cdesc cupstream cmethod csize cinterval
- 
+
     read -rp "  Slug (e.g. alpine):                 " cslug
     [[ -z "$cslug" ]] && { warn "Slug cannot be empty."; return; }
- 
+
     # Duplicate slug check
     local all_slugs=()
     for (( i=0; i<${#MIRROR_CATALOG[@]}; i++ )); do all_slugs+=("$(catalog_field "$i" 0)"); done
@@ -174,7 +175,7 @@ prompt_custom_mirror() {
     for s in "${all_slugs[@]:-}"; do
         [[ "$s" == "$cslug" ]] && { warn "Slug '$cslug' already exists."; return; }
     done
- 
+
     read -rp "  Display name:                       " cname
     read -rp "  Short description:                  " cdesc
     echo     "  Sync method:"
@@ -183,14 +184,14 @@ prompt_custom_mirror() {
     echo     "    [3] original    — this server IS the origin; no upstream sync"
     echo     "    [4] mirror      — pull from a self-hosted rsync daemon"
     read -rp "  Choice [1]:                         " cmethod_n
- 
+
     case "${cmethod_n:-1}" in
         2) cmethod="rclone-http" ;;
         3) cmethod="original"    ;;
         4) cmethod="mirror"      ;;
         *) cmethod="rsync"       ;;
     esac
- 
+
     if [[ "$cmethod" == "original" ]]; then
         cupstream="none"
         echo ""; info "Original mirror — files pushed to: \${LINUX_DIR}/${cslug}/"; echo ""
@@ -213,27 +214,27 @@ prompt_custom_mirror() {
     else
         read -rp "  Upstream URL (rsync:// or https://): " cupstream
     fi
- 
+
     read -rp "  Estimated size (e.g. ~50 GiB):      " csize
     read -rp "  Sync interval (e.g. 6h, 12h, 24h) [6h]: " cinterval
     cinterval="${cinterval:-6h}"
- 
+
     CUSTOM_MIRRORS+=("${cslug}|${cname}|${cdesc}|${cupstream}|${cmethod}|${csize:-unknown}||${cinterval}")
     SELECTED_MIRRORS+=("$cslug")
     ok "Added '${cslug}' (${cmethod}, every ${cinterval}) and selected it."
     sleep 1
 }
- 
+
 run_panel() {
     local catalog_count="${#MIRROR_CATALOG[@]}"
- 
+
     while true; do
         show_panel
         local add_n=$(( catalog_count + ${#CUSTOM_MIRRORS[@]} + 1 ))
- 
+
         read -rp "  > " input
         [[ -z "$input" || "${input,,}" == "done" || "${input,,}" == "d" ]] && break
- 
+
         if [[ "${input,,}" == "a" ]]; then
             SELECTED_MIRRORS=()
             for (( i=0; i<catalog_count; i++ )); do SELECTED_MIRRORS+=("$(catalog_field "$i" 0)"); done
@@ -241,7 +242,7 @@ run_panel() {
             continue
         fi
         [[ "${input,,}" == "n" ]] && { SELECTED_MIRRORS=(); continue; }
- 
+
         for token in $input; do
             if [[ "$token" =~ ^[0-9]+$ ]]; then
                 local idx=$(( token - 1 ))
@@ -255,30 +256,30 @@ run_panel() {
             fi
         done
     done
- 
+
     if [[ ${#SELECTED_MIRRORS[@]} -eq 0 ]]; then
         warn "No mirrors selected — you must select at least one."
         read -rp "  Press Enter to go back…" _
         run_panel
     fi
 }
- 
+
 # =============================================================================
 # 0. Branding
 # =============================================================================
- 
+
 echo -e "\n${B}ezmirror Setup${N}"
 echo    "  Press Enter to accept the shown default."
 echo    "  Pass --unattended and set EZMIRROR_* env vars to skip all prompts."
 echo ""
- 
+
 ask "Lab name         " LAB_NAME  "MyOrg Open Source Lab" EZMIRROR_LAB_NAME
 ask "Domain           " DOMAIN    "mirror.example.com"    EZMIRROR_DOMAIN
 ask "Location         " LOCATION  "Anytown, ST, US"       EZMIRROR_LOCATION
 ask "GitHub username  " GH_USER   "netplayz"              EZMIRROR_GH_USER
- 
+
 LOCATION_CITY="${LOCATION%, *}"
- 
+
 echo ""
 echo -e "  ${B}Lab name${N}  $LAB_NAME"
 echo -e "  ${B}Domain${N}    $DOMAIN"
@@ -288,7 +289,7 @@ if [[ "$UNATTENDED" != true ]]; then
     read -rp "  Looks good? [Y/n] " _confirm
     [[ "${_confirm,,}" == "n" ]] && die "Aborted — re-run to try again."
 fi
- 
+
 mkdir -p /etc/ezmirror
 {
     echo "# ezmirror — lab configuration"
@@ -298,19 +299,19 @@ mkdir -p /etc/ezmirror
     echo "LOCATION=\"${LOCATION}\""
     echo "GH_USER=\"${GH_USER}\""
 } > /etc/ezmirror/lab.conf
- 
+
 # =============================================================================
 # 0b. Alert config
 # =============================================================================
- 
+
 echo ""
 echo -e "${B}  Alert Configuration${N}"
 echo -e "  ezmirror can notify you when a sync fails."
 echo ""
- 
+
 ask "Discord webhook URL [blank = skip]" ALERT_WEBHOOK "" EZMIRROR_WEBHOOK
 ask "Alert email [blank = skip]        " ALERT_EMAIL   "" EZMIRROR_EMAIL
- 
+
 {
     echo "# ezmirror — alert configuration"
     echo "ALERT_WEBHOOK=\"${ALERT_WEBHOOK}\""
@@ -318,11 +319,11 @@ ask "Alert email [blank = skip]        " ALERT_EMAIL   "" EZMIRROR_EMAIL
 } > /etc/ezmirror/alert.conf
 chmod 600 /etc/ezmirror/alert.conf
 ok "Alert config saved (/etc/ezmirror/alert.conf)"
- 
+
 # =============================================================================
 # 1. Volume / storage path selection
 # =============================================================================
- 
+
 select_volume() {
     clear
     echo -e "\n${B}  Volume Selection${N}"
@@ -331,7 +332,7 @@ select_volume() {
     rule
     printf "  %-4s  %-28s  %-10s  %-10s  %s\n" "#" "Mount Point" "Total" "Available" "Device"
     rule
- 
+
     mapfile -t VOLUME_MOUNTS < <(
         df -h --output=target,fstype,size,avail,source 2>/dev/null \
         | tail -n +2 \
@@ -340,17 +341,17 @@ select_volume() {
                {print $1"|"$3"|"$4"|"$5}' \
         | sort -u
     )
- 
+
     if [[ ${#VOLUME_MOUNTS[@]} -eq 0 ]]; then
         warn "Could not detect any suitable volumes — using default path."
         MIRROR_BASE_DIR="/var/www/html"; return
     fi
- 
+
     for (( i=0; i<${#VOLUME_MOUNTS[@]}; i++ )); do
         IFS='|' read -r mnt sz avail src <<< "${VOLUME_MOUNTS[$i]}"
         printf "  %-4s  %-28s  %-10s  %-10s  %s\n" "$(( i+1 ))" "$mnt" "$sz" "$avail" "$src"
     done
- 
+
     local custom_n=$(( ${#VOLUME_MOUNTS[@]} + 1 ))
     printf "  %-4s  %s\n" "$custom_n" "Enter a custom path…"
     rule
@@ -358,19 +359,19 @@ select_volume() {
     echo -e "  Mirror data will be stored under the chosen mount point."
     echo -e "  Recommended: at least ${Y}500 GiB${N} free (multi-TiB for large mirrors)."
     echo ""
- 
+
     # Respect EZMIRROR_VOLUME env var
     if [[ -n "${EZMIRROR_VOLUME:-}" ]]; then
         MIRROR_BASE_DIR="${EZMIRROR_VOLUME%/}"
         ok "Volume (env): ${MIRROR_BASE_DIR}"; return
     fi
- 
+
     if [[ "$UNATTENDED" == true ]]; then
         IFS='|' read -r MIRROR_MOUNT _ _ _ <<< "${VOLUME_MOUNTS[0]}"
         MIRROR_BASE_DIR="${MIRROR_MOUNT%/}/ezmirror"
         ok "Volume (auto): ${MIRROR_BASE_DIR}"; return
     fi
- 
+
     while true; do
         read -rp "  Choice [1]: " _vol_choice
         _vol_choice="${_vol_choice:-1}"
@@ -397,31 +398,31 @@ select_volume() {
     done
     sleep 1
 }
- 
+
 select_volume
- 
+
 PUB_DIR="${MIRROR_BASE_DIR}/pub"
 LINUX_DIR="${MIRROR_BASE_DIR}/pub/linux"
 WEBROOT="/var/www/html"
- 
+
 if [[ "$MIRROR_BASE_DIR" != "$WEBROOT" ]]; then
     echo ""
     info "Mirror data:  ${MIRROR_BASE_DIR}/pub/"
     info "Symlink:      ${WEBROOT}/pub  →  ${MIRROR_BASE_DIR}/pub"
     echo ""
 fi
- 
+
 # =============================================================================
 # 2. Mirror selection panel
 # =============================================================================
- 
+
 if [[ -n "${EZMIRROR_MIRRORS:-}" ]]; then
     IFS=',' read -ra SELECTED_MIRRORS <<< "$EZMIRROR_MIRRORS"
     info "Mirrors (env): ${SELECTED_MIRRORS[*]}"
 else
     run_panel
 fi
- 
+
 echo -e "\n${B}  Selected mirrors:${N}"
 for slug in "${SELECTED_MIRRORS[@]}"; do
     entry="$(get_mirror_entry "$slug")"
@@ -432,39 +433,39 @@ for slug in "${SELECTED_MIRRORS[@]}"; do
     echo -e "    ${G}✓${N}  ${parts[0]}  —  ${parts[1]}  (${method_label}, every ${interval})"
 done
 echo ""
- 
+
 # =============================================================================
 # 2b. Disk space pre-check
 # =============================================================================
- 
+
 hdr "Disk Space Pre-check"
- 
+
 avail_bytes=$(df -B1 --output=avail "$MIRROR_BASE_DIR" 2>/dev/null | tail -1 || \
               df -B1 --output=avail "$(dirname "$MIRROR_BASE_DIR")" 2>/dev/null | tail -1 || echo 0)
 avail_gib=$(( avail_bytes / 1073741824 ))
 info "Available on target volume: ${avail_gib} GiB"
- 
+
 disk_warn=false
 for slug in "${SELECTED_MIRRORS[@]}"; do
     warn_field="$(get_mirror_entry "$slug" | cut -d'|' -f7)"
     if [[ "$warn_field" == "large" ]]; then disk_warn=true; break; fi
 done
- 
+
 if [[ "$disk_warn" == true ]]; then
     warn "One or more selected mirrors are multi-TiB."
     warn "Ensure ${avail_gib} GiB is sufficient before proceeding."
     echo ""
 fi
- 
+
 if [[ "$UNATTENDED" != true ]]; then
     read -rp "  Proceed with setup? [Y/n] " _go
     [[ "${_go,,}" == "n" ]] && die "Aborted."
 fi
- 
+
 # =============================================================================
 # 2c. Torrent seeding option
 # =============================================================================
- 
+
 ENABLE_TORRENTS=false
 if [[ "${EZMIRROR_TORRENTS:-}" == "yes" ]]; then
     ENABLE_TORRENTS=true
@@ -473,11 +474,11 @@ elif [[ "$UNATTENDED" != true ]]; then
     read -rp "  Enable torrent seeding for .iso files? (installs mktorrent) [y/N] " _torrents
     [[ "${_torrents,,}" == "y" ]] && ENABLE_TORRENTS=true
 fi
- 
+
 # =============================================================================
 # Path constants
 # =============================================================================
- 
+
 CONF_DIR="/etc/ezmirror"
 MIRRORS_CONF="${CONF_DIR}/mirrors.conf"
 SYNC_BIN="/usr/local/bin/ezmirror-sync"
@@ -485,29 +486,29 @@ MANAGE_BIN="/usr/local/bin/ezmirror-manage"
 STATUS_BIN="/usr/local/bin/ezmirror-status"
 LOGS_BIN="/usr/local/bin/ezmirror-logs"
 LOGFILE="/var/log/ezmirror.log"
- 
+
 # =============================================================================
 hdr "1. Dependencies"
 # =============================================================================
- 
+
 apt-get update -qq
- 
+
 for pkg in nginx rsync jq curl git moreutils; do
     dpkg -s "$pkg" &>/dev/null && ok "$pkg" || { apt-get install -y -qq "$pkg" 2>/dev/null; ok "$pkg"; }
 done
- 
+
 # mktorrent for torrent seeding
 if [[ "$ENABLE_TORRENTS" == true ]]; then
     dpkg -s mktorrent &>/dev/null && ok "mktorrent" || { apt-get install -y -qq mktorrent 2>/dev/null; ok "mktorrent"; }
 fi
- 
+
 # rclone — only if needed
 needs_rclone=false
 for slug in "${SELECTED_MIRRORS[@]}"; do
     method="$(get_mirror_entry "$slug" | cut -d'|' -f5)"
     [[ "$method" == rclone-* ]] && needs_rclone=true && break
 done
- 
+
 if [[ "$needs_rclone" == true ]]; then
     if command -v rclone &>/dev/null; then
         ok "rclone  ($(rclone --version | awk 'NR==1{print $2}'))"
@@ -517,13 +518,13 @@ if [[ "$needs_rclone" == true ]]; then
         ok "rclone  ($(rclone --version | awk 'NR==1{print $2}'))"
     fi
 fi
- 
+
 # =============================================================================
 hdr "2. Directories"
 # =============================================================================
- 
+
 mkdir -p "$CONF_DIR" "$LINUX_DIR"
- 
+
 if [[ "$MIRROR_BASE_DIR" != "$WEBROOT" ]]; then
     [[ -L "${WEBROOT}/pub" ]] && rm -f "${WEBROOT}/pub"
     [[ -d "${WEBROOT}/pub" && ! -L "${WEBROOT}/pub" ]] && \
@@ -532,18 +533,18 @@ if [[ "$MIRROR_BASE_DIR" != "$WEBROOT" ]]; then
     ln -sf "$PUB_DIR" "${WEBROOT}/pub"
     ok "Symlink: ${WEBROOT}/pub → ${PUB_DIR}"
 fi
- 
+
 for slug in "${SELECTED_MIRRORS[@]}"; do
     mkdir -p "${LINUX_DIR}/${slug}"
     ok "/pub/linux/${slug}/"
 done
 chown -R www-data:www-data "$PUB_DIR"
 chmod -R 755 "$PUB_DIR"
- 
+
 # =============================================================================
 hdr "3. Config files"
 # =============================================================================
- 
+
 {
     echo "# ezmirror — active mirrors"
     echo "# Generated by setup.sh on $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -556,7 +557,7 @@ hdr "3. Config files"
     done
 } > "$MIRRORS_CONF"
 ok "$MIRRORS_CONF"
- 
+
 {
     echo "# ezmirror — path configuration"
     echo "# Generated by setup.sh on $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -567,21 +568,21 @@ ok "$MIRRORS_CONF"
     echo "ENABLE_TORRENTS=\"${ENABLE_TORRENTS}\""
 } > "${CONF_DIR}/paths.conf"
 ok "${CONF_DIR}/paths.conf"
- 
+
 # Initialise status.json
 echo '{"generated":0,"mirrors":{}}' > "${WEBROOT}/status.json"
 chown www-data:www-data "${WEBROOT}/status.json"
 ok "${WEBROOT}/status.json"
- 
+
 # =============================================================================
 hdr "4. HTML pages"
 # =============================================================================
- 
+
 # ── Shared CSS helpers ─────────────────────────────────────────────────────────
- 
+
 SHARED_FONTS='<link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">'
- 
+
 THEME_TOGGLE_JS='<script>
 (function(){
   var t=localStorage.getItem("em-theme")||"auto";
@@ -589,9 +590,9 @@ THEME_TOGGLE_JS='<script>
   else if(t==="light")document.documentElement.setAttribute("data-theme","light");
 })();
 </script>'
- 
+
 THEME_TOGGLE_BTN='<button id="theme-btn" onclick="(function(){var h=document.documentElement,c=h.getAttribute(\"data-theme\")||\"auto\",n=c===\"dark\"?\"light\":\"dark\";h.setAttribute(\"data-theme\",n);localStorage.setItem(\"em-theme\",n);})();" title="Toggle dark/light mode" style="background:none;border:1px solid var(--border);color:var(--muted);padding:.3rem .6rem;border-radius:4px;cursor:pointer;font-family:var(--mono);font-size:.72rem;">◐</button>'
- 
+
 # ── Homepage ──────────────────────────────────────────────────────────────────
 cat > "${WEBROOT}/index.html" << HOMEOF
 <!DOCTYPE html>
@@ -714,13 +715,13 @@ Promise.all([
 </html>
 HOMEOF
 ok "index.html"
- 
+
 # ── Shared listing page generator ─────────────────────────────────────────────
 generate_listing_page() {
     local title_path="$1" breadcrumbs="$2" files_json="$3" base_href="$4"
     local parent_href; parent_href="$(dirname "${base_href%/}")/"
     [[ "$parent_href" == "//" ]] && parent_href="/"
- 
+
     cat << LISTEOF
 <!DOCTYPE html>
 <html lang="en">
@@ -830,27 +831,27 @@ function sortTable(col){
 </html>
 LISTEOF
 }
- 
+
 generate_listing_page \
     "/pub" \
     "<a href=\"/\">${DOMAIN}</a><span class=\"sep\">/</span><span>pub</span>" \
     "/pub/files.json" "/pub/" \
     > "${PUB_DIR}/index.html"
 ok "pub/index.html"
- 
+
 generate_listing_page \
     "/pub/linux" \
     "<a href=\"/\">${DOMAIN}</a><span class=\"sep\">/</span><a href=\"/pub/\">pub</a><span class=\"sep\">/</span><span>linux</span>" \
     "/pub/linux/files.json" "/pub/linux/" \
     > "${LINUX_DIR}/index.html"
 ok "pub/linux/index.html"
- 
+
 # ── Per-mirror index pages ─────────────────────────────────────────────────────
 generate_mirror_page() {
     local slug="$1" name="$2" desc="$3" upstream="$4" method="$5"
     local mirror_dir="${LINUX_DIR}/${slug}"
     local subhead meta_upstream_html push_notice_html=""
- 
+
     if [[ "$method" == "original" ]]; then
         subhead="Serving original content — this server is the primary source"
         meta_upstream_html='<div class="meta-item"><div class="label">Role</div><div class="value">Origin server<br><span style="color:var(--muted);font-size:.8rem">Files are maintained here directly.</span></div></div>'
@@ -867,7 +868,7 @@ generate_mirror_page() {
         meta_upstream_html="<div class=\"meta-item\"><div class=\"label\">Upstream</div><div class=\"value\"><a href=\"${upstream}\" target=\"_blank\" rel=\"noopener\">${uh}</a></div></div>"
         push_notice_html='<div class="notice" id="sync-notice">Last sync time unavailable.</div>'
     fi
- 
+
     cat > "${mirror_dir}/index.html" << MIREOF
 <!DOCTYPE html>
 <html lang="en">
@@ -1020,73 +1021,73 @@ function sortTable(col){
 MIREOF
     ok "pub/linux/${slug}/index.html"
 }
- 
+
 for slug in "${SELECTED_MIRRORS[@]}"; do
     entry="$(get_mirror_entry "$slug")"
     IFS='|' read -ra p <<< "$entry"
     generate_mirror_page "${p[0]}" "${p[1]}" "${p[2]}" "${p[3]}" "${p[4]}"
 done
 chown -R www-data:www-data "$PUB_DIR" "${WEBROOT}/index.html" 2>/dev/null || true
- 
+
 # =============================================================================
 hdr "5. nginx config"
 # =============================================================================
- 
+
 [[ -f /etc/nginx/sites-available/default ]] && \
     cp /etc/nginx/sites-available/default \
        "/etc/nginx/sites-available/default.bak.$(date +%s)" && \
     info "Backed up existing nginx config"
- 
+
 SSL_CERT="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
 SSL_KEY="/etc/letsencrypt/live/${DOMAIN}/privkey.pem"
 SSL_OPTS="/etc/letsencrypt/options-ssl-nginx.conf"
- 
+
 nginx_common="
     root ${WEBROOT};
     index index.html index.htm;
     include /etc/nginx/mime.types;
- 
+
     # status.json — no cache so it's always fresh
     location = /status.json {
         add_header Cache-Control 'no-cache, no-store, must-revalidate';
         add_header Pragma no-cache;
         add_header Expires 0;
     }
- 
+
     # Dynamic mirror locations — generated by ezmirror-sync
     include /etc/nginx/ezmirror-mirrors.conf;
- 
+
     location /pub/ {
         alias ${PUB_DIR}/;
         index index.html;
         sendfile on; tcp_nopush on; tcp_nodelay on;
         autoindex on;
     }
- 
+
     location / { try_files \$uri \$uri/ =404; }
 "
- 
+
 if [[ -f "$SSL_CERT" && -f "$SSL_KEY" && -f "$SSL_OPTS" ]]; then
     cat > /etc/nginx/sites-available/default << NGINX
 # ${LAB_NAME} — ${DOMAIN} — managed by ezmirror
- 
+
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
     return 301 https://${DOMAIN}\$request_uri;
 }
- 
+
 server {
     listen 443 ssl;
     listen [::]:443 ssl ipv6only=on;
     server_name ${DOMAIN} www.${DOMAIN};
- 
+
     ssl_certificate     ${SSL_CERT};
     ssl_certificate_key ${SSL_KEY};
     include             ${SSL_OPTS};
     ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
- 
+
     if (\$host = www.${DOMAIN}) {
         return 301 https://${DOMAIN}\$request_uri;
     }
@@ -1098,7 +1099,7 @@ else
     cat > /etc/nginx/sites-available/default << NGINX
 # ${LAB_NAME} — ${DOMAIN} — managed by ezmirror
 # HTTP only. Enable HTTPS: sudo certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}
- 
+
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
@@ -1109,14 +1110,14 @@ NGINX
     warn "No SSL certs found — HTTP-only config written"
     warn "Run: sudo certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}"
 fi
- 
+
 # Create initial ezmirror-mirrors.conf (empty, will be populated by sync)
 cat > /etc/nginx/ezmirror-mirrors.conf << 'MIRRORSEOF'
 # ezmirror dynamic mirror locations
 # Generated by ezmirror-sync — do not edit manually
 MIRRORSEOF
 chmod 644 /etc/nginx/ezmirror-mirrors.conf
- 
+
 if nginx -t 2>/dev/null; then
     systemctl reload nginx
     ok "nginx reloaded"
@@ -1124,11 +1125,11 @@ else
     warn "nginx config test failed — check /etc/nginx/sites-available/default"
     nginx -t
 fi
- 
+
 # =============================================================================
 hdr "6. rclone remotes"
 # =============================================================================
- 
+
 for slug in "${SELECTED_MIRRORS[@]}"; do
     entry="$(get_mirror_entry "$slug")"
     IFS='|' read -ra p <<< "$entry"
@@ -1148,11 +1149,11 @@ for slug in "${SELECTED_MIRRORS[@]}"; do
         fi
     fi
 done
- 
+
 # =============================================================================
 hdr "7. rsyncd — push (original mirrors) + read-only pull (all mirrors)"
 # =============================================================================
- 
+
 ORIGINAL_MIRRORS=()
 MIRROR_TYPE_MIRRORS=()
 for slug in "${SELECTED_MIRRORS[@]}"; do
@@ -1160,7 +1161,7 @@ for slug in "${SELECTED_MIRRORS[@]}"; do
     [[ "$method" == "original" ]] && ORIGINAL_MIRRORS+=("$slug")
     [[ "$method" == "mirror"   ]] && MIRROR_TYPE_MIRRORS+=("$slug")
 done
- 
+
 # ── 7a. Credentials for mirror-type upstreams ────────────────────────────────
 if [[ ${#MIRROR_TYPE_MIRRORS[@]} -gt 0 ]]; then
     for slug in "${MIRROR_TYPE_MIRRORS[@]}"; do
@@ -1175,10 +1176,10 @@ if [[ ${#MIRROR_TYPE_MIRRORS[@]} -gt 0 ]]; then
         fi
     done
 fi
- 
+
 # ── 7b. rsyncd config (push for originals + read-only for all) ───────────────
 RSYNCD_CONF="/etc/rsyncd.conf"
- 
+
 build_rsyncd_conf() {
     local push_user="${1:-mirrorpush}"
     {
@@ -1198,7 +1199,7 @@ build_rsyncd_conf() {
             entry="$(get_mirror_entry "$slug")"
             IFS='|' read -ra p <<< "$entry"
             cat << ROMOD
- 
+
 [${slug}]
     path        = ${LINUX_DIR}/${slug}
     comment     = ${p[1]} — ${p[2]}
@@ -1207,7 +1208,7 @@ build_rsyncd_conf() {
     # Restrict by IP for production: hosts allow = 1.2.3.4
 ROMOD
         done
- 
+
         if [[ ${#ORIGINAL_MIRRORS[@]} -gt 0 ]]; then
             echo ""
             echo "# ── Write modules for original mirrors (push access) ──"
@@ -1215,7 +1216,7 @@ ROMOD
                 entry="$(get_mirror_entry "$slug")"
                 IFS='|' read -ra p <<< "$entry"
                 cat << RWMOD
- 
+
 [${slug}-push]
     path         = ${LINUX_DIR}/${slug}
     comment      = ${p[1]} — push endpoint
@@ -1233,9 +1234,8 @@ RWMOD
         fi
     } > "$RSYNCD_CONF"
 }
- 
+
 if [[ ${#ORIGINAL_MIRRORS[@]} -eq 0 ]]; then
-    # No push mirrors — just set up read-only modules
     build_rsyncd_conf "mirrorpush"
     ok "rsyncd.conf  (read-only pull modules for all mirrors)"
 else
@@ -1247,27 +1247,27 @@ else
     else
         _rsyncd="y"
     fi
- 
+
     if [[ "${_rsyncd,,}" != "n" ]]; then
         ask "rsync push username" PUSH_USER "mirrorpush"
         read -rsp "  rsync push password:              " PUSH_PASS; echo ""
- 
+
         if ! id "$PUSH_USER" &>/dev/null; then
             useradd --system --no-create-home --shell /usr/sbin/nologin "$PUSH_USER"
             ok "System user '${PUSH_USER}' created"
         else
             ok "System user '${PUSH_USER}' already exists"
         fi
- 
+
         build_rsyncd_conf "$PUSH_USER"
         echo "${PUSH_USER}:${PUSH_PASS}" > /etc/rsyncd.secrets
         chmod 600 /etc/rsyncd.secrets
         ok "/etc/rsyncd.secrets (mode 600)"
         ok "$RSYNCD_CONF"
- 
+
         systemctl enable rsync && systemctl restart rsync
         ok "rsyncd enabled and started"
- 
+
         echo ""
         info "Push to an original mirror from a client:"
         for slug in "${ORIGINAL_MIRRORS[@]}"; do
@@ -1280,20 +1280,19 @@ else
         ok "rsyncd.conf  (read-only pull modules only)"
     fi
 fi
- 
-# Start rsyncd (read-only pull is always useful)
+
 systemctl enable rsync 2>/dev/null || true
 systemctl restart rsync 2>/dev/null && ok "rsyncd started" || warn "rsyncd start failed — check 'systemctl status rsync'"
- 
+
 info "Downstream mirrors can pull from this server:"
 for slug in "${SELECTED_MIRRORS[@]}"; do
     echo -e "    rsync -avz rsync://${DOMAIN}/${slug}/ /your/local/${slug}/"
 done
- 
+
 # =============================================================================
 hdr "8. Logrotate"
 # =============================================================================
- 
+
 cat > /etc/logrotate.d/ezmirror << LOGEOF
 /var/log/ezmirror.log {
     daily
@@ -1306,7 +1305,7 @@ cat > /etc/logrotate.d/ezmirror << LOGEOF
     dateext
     dateformat -%Y%m%d
 }
- 
+
 /var/log/rsyncd.log {
     weekly
     rotate 8
@@ -1317,11 +1316,11 @@ cat > /etc/logrotate.d/ezmirror << LOGEOF
 }
 LOGEOF
 ok "/etc/logrotate.d/ezmirror"
- 
+
 # =============================================================================
 hdr "9. ezmirror-sync (with automatic index.html generation)"
 # =============================================================================
- 
+
 cat > "$SYNC_BIN" << 'SYNCEOF'
 #!/usr/bin/env bash
 # ezmirror-sync — sync all (or one) configured mirrors
@@ -1332,7 +1331,7 @@ cat > "$SYNC_BIN" << 'SYNCEOF'
 #   ezmirror-sync --mirror=arch       sync one mirror (ignores interval)
 #   ezmirror-sync --force             sync all, ignoring intervals
 set -euo pipefail
- 
+
 CONF_DIR="/etc/ezmirror"
 CONF="${CONF_DIR}/mirrors.conf"
 PATHS_CONF="${CONF_DIR}/paths.conf"
@@ -1343,11 +1342,11 @@ LOCKFILE="/var/run/ezmirror-sync.lock"
 DRY_RUN=false
 ONLY_SLUG=""
 FORCE=false
- 
+
 [[ -f "$PATHS_CONF" ]] && source "$PATHS_CONF" || { WEBROOT="/var/www/html"; PUB_DIR="${WEBROOT}/pub"; LINUX_DIR="${WEBROOT}/pub/linux"; ENABLE_TORRENTS="false"; }
-[[ -f "$LAB_CONF"   ]] && source "$LAB_CONF"   || { LAB_NAME="ezmirror"; DOMAIN="localhost"; }
+[[ -f "$LAB_CONF"   ]] && source "$LAB_CONF"   || { LAB_NAME="ezmirror"; DOMAIN="localhost"; LOCATION="Unknown"; }
 [[ -f "$ALERT_CONF" ]] && source "$ALERT_CONF" || { ALERT_WEBHOOK=""; ALERT_EMAIL=""; }
- 
+
 for arg in "${@:-}"; do
     case "$arg" in
         --dry-run)   DRY_RUN=true ;;
@@ -1355,10 +1354,10 @@ for arg in "${@:-}"; do
         --mirror=*)  ONLY_SLUG="${arg#--mirror=}" ;;
     esac
 done
- 
+
 log()  { local l="$1"; shift; echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$l] $*" | tee -a "$LOGFILE"; }
 logq() { local l="$1"; shift; echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$l] $*" >> "$LOGFILE"; }
- 
+
 # ── Lock file — prevent overlapping syncs ─────────────────────────────────────
 exec 200>"$LOCKFILE"
 if ! flock -n 200; then
@@ -1366,7 +1365,7 @@ if ! flock -n 200; then
     exit 0
 fi
 trap 'flock -u 200; rm -f "$LOCKFILE"' EXIT INT TERM
- 
+
 # ── Alerting ──────────────────────────────────────────────────────────────────
 send_alert() {
     local slug="$1" message="$2"
@@ -1382,25 +1381,44 @@ send_alert() {
             mail -s "$title" "$ALERT_EMAIL" 2>/dev/null || true
     fi
 }
- 
+
 # ── Generate index.html for a directory ────────────────────────────────────────
+# FIX: breadcrumbs built root-to-leaf by collecting segments then reversing
 generate_dir_index() {
     local dir="$1" base_href="$2" title_path="$3"
     [[ ! -d "$dir" ]] && return
-    
-    # Build breadcrumbs
-    local breadcrumbs="<a href=\"/\">${DOMAIN}</a>"
+
+    # Collect path segments in reverse order, then flip
+    local crumb_parts=()
     local current_path="${base_href%/}"
-    while [[ "$current_path" != "/" && -n "$current_path" ]]; do
-        local name; name=$(basename "$current_path")
-        breadcrumbs+="<span class=\"sep\">/</span><a href=\"${current_path}/\">${name}</a>"
+    while [[ "$current_path" != "/" && "$current_path" != "." && -n "$current_path" ]]; do
+        crumb_parts+=("${current_path}|$(basename "$current_path")")
         current_path=$(dirname "$current_path")
-        [[ "$current_path" == "." ]] && break
     done
-    
+
+    # Reverse into root-first order
+    local n=${#crumb_parts[@]}
+    local reversed=()
+    for (( ci=n-1; ci>=0; ci-- )); do
+        reversed+=("${crumb_parts[$ci]}")
+    done
+
+    # Build breadcrumb HTML: intermediate segments are links, last is a plain span
+    local breadcrumbs="<a href=\"/\">${DOMAIN}</a>"
+    local total=${#reversed[@]}
+    for (( ci=0; ci<total; ci++ )); do
+        local cpath="${reversed[$ci]%%|*}"
+        local cname="${reversed[$ci]##*|}"
+        if (( ci < total - 1 )); then
+            breadcrumbs+="<span class=\"sep\">/</span><a href=\"${cpath}/\">${cname}</a>"
+        else
+            breadcrumbs+="<span class=\"sep\">/</span><span>${cname}</span>"
+        fi
+    done
+
     local parent_href; parent_href="$(dirname "${base_href%/}")/"
     [[ "$parent_href" == "//" ]] && parent_href="/"
-    
+
     cat > "${dir}/index.html" << DIREOF
 <!DOCTYPE html>
 <html lang="en">
@@ -1518,15 +1536,17 @@ function sortTable(col){
 </html>
 DIREOF
 }
- 
+
 # ── Generate dynamic nginx mirror config ─────────────────────────────────────
+# FIX: reads mirrors.conf directly instead of using undefined ${SELECTED_MIRRORS[@]}
 generate_nginx_mirrors_conf() {
     {
         echo "# ezmirror dynamic mirror locations"
         echo "# Generated by ezmirror-sync on $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         echo "# Do not edit manually — regenerated on every sync"
         echo ""
-        for slug in "${SELECTED_MIRRORS[@]}"; do
+        while IFS='|' read -r slug _rest; do
+            [[ -z "${slug:-}" || "${slug:0:1}" == "#" ]] && continue
             echo "location /pub/linux/${slug}/ {"
             echo "    alias ${LINUX_DIR}/${slug}/;"
             echo "    index index.html;"
@@ -1534,10 +1554,10 @@ generate_nginx_mirrors_conf() {
             echo "    autoindex on;"
             echo "}"
             echo ""
-        done
+        done < "$CONF"
     } > /etc/nginx/ezmirror-mirrors.conf
 }
- 
+
 # Interval check ────────────────────────────────────────────────────────
 interval_to_seconds() {
     local s="$1"
@@ -1549,7 +1569,7 @@ interval_to_seconds() {
         *) echo $(( num * 3600 ))  ;; # default: treat as hours
     esac
 }
- 
+
 is_sync_due() {
     local slug="$1" interval_str="$2"
     [[ "$FORCE" == true || -n "$ONLY_SLUG" ]] && return 0
@@ -1561,7 +1581,7 @@ is_sync_due() {
     local now; now=$(date +%s)
     (( now - last_sync >= interval_secs ))
 }
- 
+
 # ── Disk space check ─────────────────────────────────────────────────────
 check_disk_space() {
     local dir="$1"
@@ -1572,7 +1592,7 @@ check_disk_space() {
         send_alert "disk" "Low disk space: ${avail_gib} GiB remaining on ${dir}"
     fi
 }
- 
+
 # ── JSON helpers using jq ─────────────────────────────────────────────────────
 build_files_json() {
     local dir="$1"
@@ -1595,7 +1615,7 @@ build_files_json() {
     done
     printf ']'
 }
- 
+
 update_status_json() {
     local slug="$1" exit_code="$2"
     local bw_limit="${3:-0}" upstream_health="${4:-ok}" upstream_check_time="${5:-0}" upstream_response_ms="${6:-0}"
@@ -1605,7 +1625,7 @@ update_status_json() {
     local disk_bytes=0
     [[ -d "${LINUX_DIR}/${slug}" ]] && disk_bytes=$(du -sb "${LINUX_DIR}/${slug}" 2>/dev/null | awk '{print $1}' || echo 0)
     local status_str; [[ "$exit_code" -eq 0 ]] && status_str="ok" || status_str="error"
- 
+
     local current='{}'
     [[ -f "$status_file" ]] && current=$(cat "$status_file")
     echo "$current" | jq \
@@ -1629,7 +1649,7 @@ update_status_json() {
         > "${status_file}.tmp" && mv "${status_file}.tmp" "$status_file"
     chown www-data:www-data "$status_file" 2>/dev/null || true
 }
- 
+
 update_mirrors_json() {
     local mirror_json_entries=("$@")
     {
@@ -1644,7 +1664,7 @@ update_mirrors_json() {
     chown www-data:www-data "${WEBROOT}/mirrors.json" 2>/dev/null || true
     log INFO "[JSON] mirrors.json (${#mirror_json_entries[@]} mirror(s))"
 }
- 
+
 seed_torrents() {
     local slug="$1" local_dir="$2"
     [[ "${ENABLE_TORRENTS:-false}" != "true" ]] && return
@@ -1659,15 +1679,15 @@ seed_torrents() {
             logq WARN "  mktorrent failed for ${iso}"
     done
 }
- 
+
 [[ -f "$CONF" ]] || { log ERROR "No mirrors.conf at $CONF — run setup.sh first."; exit 1; }
- 
+
 log INFO "=== ezmirror-sync started${DRY_RUN:+ [DRY RUN]}${FORCE:+ [FORCE]} ==="
 check_disk_space "${LINUX_DIR}"
- 
+
 declare -a mirror_json_entries=()
 declare -A sync_exit_codes=()
- 
+
 while IFS='|' read -r slug name desc upstream method _size _warn interval bw_limit retention_days retention_max_gib || [[ -n "${slug:-}" ]]; do
     [[ -z "${slug:-}" || "${slug:0:1}" == "#" ]] && continue
     [[ -n "$ONLY_SLUG" && "$slug" != "$ONLY_SLUG" ]] && continue
@@ -1675,7 +1695,7 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
     bw_limit="${bw_limit:-0}"
     retention_days="${retention_days:-0}"
     retention_max_gib="${retention_max_gib:-0}"
- 
+
     if ! is_sync_due "$slug" "$interval"; then
         log INFO "--- ${slug}: skipping (synced within ${interval}) ---"
         mirror_json_entries+=("$(jq -n --arg sl "$slug" --arg n "$name" --arg d "$desc" --arg m "$method" \
@@ -1710,16 +1730,16 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
             continue
         fi
     fi
- 
+
     local_dir="${LINUX_DIR}/${slug}"
     mkdir -p "$local_dir"
     sync_exit=0
- 
+
     case "$method" in
         original)
             log INFO "--- ${slug}: original mirror — skipping upstream sync ---"
             ;;
- 
+
         rsync)
             log INFO "--- ${slug}: syncing via rsync (interval: ${interval}${bw_limit:+, bwlimit=${bw_limit}Mbps}) ---"
             flags=(-rlptv --delete --safe-links --hard-links
@@ -1733,7 +1753,7 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
                 send_alert "$slug" "rsync exited with code ${sync_exit} for mirror '${slug}'. Check ${LOGFILE} for details."
             }
             ;;
- 
+
         mirror)
             log INFO "--- ${slug}: syncing from self-hosted mirror (interval: ${interval}${bw_limit:+, bwlimit=${bw_limit}Mbps}) ---"
             flags=(-rlptv --delete --safe-links --hard-links
@@ -1759,7 +1779,7 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
                 }
             fi
             ;;
- 
+
         rclone-sftp)
             log INFO "--- ${slug}: syncing via rclone sftp (interval: ${interval}) ---"
             remote_name="${upstream%%:*}"; remote_path="${upstream#*:}"
@@ -1773,7 +1793,7 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
                 send_alert "$slug" "rclone sftp sync failed for '${slug}' (exit ${sync_exit})."
             }
             ;;
- 
+
         rclone-http)
             log INFO "--- ${slug}: syncing via rclone http (interval: ${interval}) ---"
             flags=(--transfers 4 --checkers 8 --retries 3
@@ -1785,23 +1805,23 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
                 send_alert "$slug" "rclone http sync failed for '${slug}' (exit ${sync_exit})."
             }
             ;;
- 
+
         *)
             log WARN "Unknown method '${method}' for ${slug} — skipping"
             continue
             ;;
     esac
- 
+
     sync_exit_codes["$slug"]=$sync_exit
- 
+
     if [[ "$DRY_RUN" == true ]]; then
         log INFO "  [DRY RUN] skipping SHA256SUMS, files.json, torrent steps for ${slug}"
         mirror_json_entries+=("$(jq -n --arg sl "$slug" --arg n "$name" --arg d "$desc" --arg m "$method" \
             '{slug:$sl,name:$n,desc:$d,path:("/pub/linux/"+$sl+"/"),method:$m}')")
         continue
     fi
- 
-    # SHA256SUMS — use jq-based approach, skip empty dirs cleanly
+
+    # SHA256SUMS
     find "$local_dir" -mindepth 0 -maxdepth 3 -type d | while read -r dir; do
         mapfile -t regular < <(find "$dir" -maxdepth 1 -type f \
             ! -name "*.html" ! -name "SHA256SUMS" ! -name "files.json" ! -name "*.torrent" 2>/dev/null)
@@ -1810,29 +1830,31 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
             | grep -v "SHA256SUMS\|index\.html\|files\.json" > SHA256SUMS || true)
     done
     log INFO "  [SHA256] ${slug}"
- 
-    # files.json using jq for correct escaping
+
+    # files.json
     build_files_json "$local_dir" > "${local_dir}/files.json"
     log INFO "  [JSON]   ${slug}/files.json"
- 
-    # Generate index.html for the mirror root
+
+    # index.html for mirror root
     generate_dir_index "$local_dir" "/pub/linux/${slug}/" "/pub/linux/${slug}"
     log INFO "  [INDEX]  ${slug}/index.html"
- 
-    # Generate index.html for all subdirectories
+
+    # index.html for all subdirectories
+    # FIX: removed invalid 'local' declarations outside functions
     find "$local_dir" -mindepth 1 -type d | while read -r subdir; do
         build_files_json "$subdir" > "${subdir}/files.json"
-        local rel_path="${subdir#${LINUX_DIR}/}"
-        local href="/pub/linux/${rel_path}/"
-        local title="/pub/linux/${rel_path}"
+        rel_path="${subdir#${LINUX_DIR}/}"
+        href="/pub/linux/${rel_path}/"
+        title="/pub/linux/${rel_path}"
         generate_dir_index "$subdir" "$href" "$title"
     done
     log INFO "  [INDEX]  ${slug}/* (all subdirectories)"
- 
-    # Torrent seeding for ISOs
+
+    # Torrent seeding
     seed_torrents "$slug" "$local_dir"
 
     # Retention / cleanup — runs after successful sync only
+    # FIX: removed invalid 'local' declarations outside functions
     if [[ "$sync_exit" -eq 0 && "$DRY_RUN" != true ]]; then
         if (( retention_days > 0 || retention_max_gib > 0 )); then
             log INFO "  [CLEANUP] ${slug} (retention: ${retention_days}d / ${retention_max_gib}GiB)"
@@ -1841,8 +1863,8 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
                 log INFO "  [CLEANUP] deleted files older than ${retention_days} days"
             fi
             if (( retention_max_gib > 0 )); then
-                local max_bytes=$(( retention_max_gib * 1073741824 ))
-                local cur_bytes; cur_bytes=$(du -sb "$local_dir" 2>/dev/null | awk '{print $1}' || echo 0)
+                max_bytes=$(( retention_max_gib * 1073741824 ))
+                cur_bytes=$(du -sb "$local_dir" 2>/dev/null | awk '{print $1}' || echo 0)
                 if (( cur_bytes > max_bytes )); then
                     log WARN "  [CLEANUP] size limit exceeded ($(( cur_bytes / 1073741824 ))GiB > ${retention_max_gib}GiB), pruning oldest files"
                     find "$local_dir" -type f -printf '%T@ %p\n' 2>/dev/null | sort -n | cut -d' ' -f2- | \
@@ -1858,31 +1880,31 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
 
     # Update per-mirror status
     update_status_json "$slug" "$sync_exit" "$bw_limit" "${upstream_health:-ok}" "${upstream_check_time:-0}" "${upstream_response_ms:-0}" "$retention_days" "$retention_max_gib"
- 
+
     mirror_json_entries+=("$(jq -n --arg sl "$slug" --arg n "$name" --arg d "$desc" --arg m "$method" \
         '{slug:$sl,name:$n,desc:$d,path:("/pub/linux/"+$sl+"/"),method:$m}')")
- 
+
 done < "$CONF"
- 
+
 [[ "$DRY_RUN" == true ]] && { log INFO "=== Dry run complete ==="; exit 0; }
- 
+
 # Top-level files.json for pub/ and pub/linux/
 for dir in "$PUB_DIR" "$LINUX_DIR"; do
     [[ -d "$dir" ]] || continue
     build_files_json "$dir" > "${dir}/files.json"
     log INFO "[JSON] ${dir}/files.json"
 done
- 
+
 update_mirrors_json "${mirror_json_entries[@]:-}"
- 
-# Generate dynamic nginx config
+
+# Generate dynamic nginx config and reload
 generate_nginx_mirrors_conf
 nginx -t 2>/dev/null && systemctl reload nginx || logq WARN "nginx config reload failed"
 log INFO "[NGINX] ezmirror-mirrors.conf regenerated"
- 
+
 chown -R www-data:www-data "$PUB_DIR" "${WEBROOT}/mirrors.json" "${WEBROOT}/status.json" 2>/dev/null || true
 chmod -R 755 "$PUB_DIR"
- 
+
 # Final exit code: non-zero if any mirror failed
 overall_exit=0
 for slug in "${!sync_exit_codes[@]}"; do
@@ -1891,7 +1913,7 @@ done
 log INFO "=== ezmirror-sync complete (exit: ${overall_exit}) ==="
 exit $overall_exit
 SYNCEOF
- 
+
 chmod +x "$SYNC_BIN"
 ok "$SYNC_BIN"
 
@@ -2197,11 +2219,9 @@ while IFS='|' read -r slug name desc upstream method _s _w interval bw_limit ret
     last_sync="never"; disk_used="—"; status_str="unknown"; status_color="$Y"
     upstream_str="—"; bw_str="∞"; retention_str="forever"
 
-    # Bandwidth display
     (( bw_limit > 0 )) && bw_str="${bw_limit} Mbps"
     [[ "$method" == "original" ]] && bw_str="—"
 
-    # Retention display
     if (( retention_days > 0 && retention_max_gib > 0 )); then
         retention_str="${retention_days}d/${retention_max_gib}G"
     elif (( retention_days > 0 )); then
@@ -2254,7 +2274,6 @@ done < "$CONF"
 rule
 echo ""
 
-# Timer status
 if systemctl is-active ezmirror-sync.timer &>/dev/null; then
    next_usec=$(systemctl show ezmirror-sync.timer --property=NextElapseUSecRealtime --value 2>/dev/null || echo "0")
 if [[ "$next_usec" -gt 1000000000000000 ]]; then
@@ -2392,7 +2411,6 @@ verify_quick() {
     fi
     ok "${slug}: ok — ${local_count} files, $(( local_size / 1073741824 )) GiB"
 
-    # Update status.json with verify info
     local status_file="${WEBROOT}/status.json"
     local now; now=$(date +%s)
     if [[ -f "$status_file" ]]; then
@@ -2510,7 +2528,6 @@ check_upstream() {
     esac
     local ms=$(( $(date +%s%3N) - t0 ))
 
-    # Update status.json
     local status_file="${WEBROOT}/status.json"
     local now; now=$(date +%s)
     if [[ -f "$status_file" ]]; then
@@ -2585,7 +2602,6 @@ case "${1:-}" in
         log "Testing update to ${TARGET_VERSION} (no changes made)…"
         mkdir -p "${TEST_DIR}"/{etc,usr/local/bin}
         cp -r /etc/ezmirror "${TEST_DIR}/etc/" 2>/dev/null || true
-        # Validate current mirrors.conf is parseable
         while IFS='|' read -r slug rest; do
             [[ -z "$slug" || "$slug" == \#* ]] && continue
             [[ -z "$rest" ]] && { log "✗ Invalid mirrors.conf line: $slug"; rm -rf "$TEST_DIR"; exit 1; }
@@ -2638,7 +2654,6 @@ if [[ -f "$MIGRATE_SCRIPT" ]]; then
     bash "$MIGRATE_SCRIPT" || die "Migration failed — aborting"
     log "✓ Migration complete"
 else
-    # Auto-migrate mirrors.conf: pad any rows with fewer than 11 fields
     MIRRORS_CONF="/etc/ezmirror/mirrors.conf"
     TEMP_CONF=$(mktemp)
     while IFS= read -r line || [[ -n "$line" ]]; do
@@ -2646,7 +2661,6 @@ else
             echo "$line" >> "$TEMP_CONF"; continue
         fi
         IFS='|' read -ra fields <<< "$line"
-        # Pad to 11 fields with defaults: bandwidth=0, retention_days=0, retention_max_gib=0
         while (( ${#fields[@]} < 11 )); do fields+=("0"); done
         ( IFS='|'; echo "${fields[*]}" ) >> "$TEMP_CONF"
     done < "$MIRRORS_CONF"
@@ -2656,6 +2670,36 @@ else
 fi
 
 # Step 5: Install new binaries
+# FIX: source existing config and export as EZMIRROR_* so --unattended
+#      preserves lab settings, domain, mirrors, and alert config instead
+#      of clobbering everything with placeholder defaults.
+log "Exporting existing config for unattended install…"
+source /etc/ezmirror/lab.conf 2>/dev/null || true
+source /etc/ezmirror/paths.conf 2>/dev/null || true
+source /etc/ezmirror/alert.conf 2>/dev/null || true
+
+export EZMIRROR_LAB_NAME="${LAB_NAME:-MyOrg Open Source Lab}"
+export EZMIRROR_DOMAIN="${DOMAIN:-mirror.example.com}"
+export EZMIRROR_LOCATION="${LOCATION:-Anytown, ST, US}"
+export EZMIRROR_GH_USER="${GH_USER:-netplayz}"
+export EZMIRROR_VOLUME="${MIRROR_BASE_DIR:-}"
+export EZMIRROR_WEBHOOK="${ALERT_WEBHOOK:-}"
+export EZMIRROR_EMAIL="${ALERT_EMAIL:-}"
+
+# Rebuild mirrors list from mirrors.conf
+if [[ -f /etc/ezmirror/mirrors.conf ]]; then
+    _update_slugs=()
+    while IFS='|' read -r _slug _rest; do
+        [[ -z "${_slug:-}" || "${_slug:0:1}" == "#" ]] && continue
+        _update_slugs+=("$_slug")
+    done < /etc/ezmirror/mirrors.conf
+    if [[ ${#_update_slugs[@]} -gt 0 ]]; then
+        export EZMIRROR_MIRRORS
+        EZMIRROR_MIRRORS=$(IFS=','; echo "${_update_slugs[*]}")
+        log "  Mirrors to preserve: ${EZMIRROR_MIRRORS}"
+    fi
+fi
+
 log "Installing new binaries…"
 bash /tmp/ezmirror-setup-new.sh --unattended || die "Update install failed"
 log "✓ Binaries updated"
@@ -2723,7 +2767,6 @@ ok "/etc/profile.d/ezmirror.sh"
 hdr "14. systemd timer"
 # =============================================================================
 
-# One-shot service
 cat > /etc/systemd/system/ezmirror-sync.service << EOF
 [Unit]
 Description=ezmirror Sync — ${LAB_NAME}
@@ -2791,7 +2834,6 @@ if [[ "${ans,,}" == "y" ]]; then
     ok "Initial sync complete"
 else
     warn "Skipped — timer fires in ~5 minutes"
-    # Write minimal mirrors.json so homepage works immediately
     {
         printf '['; first_e=true
         for slug in "${SELECTED_MIRRORS[@]}"; do
