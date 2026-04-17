@@ -23,6 +23,7 @@ export EZMIRROR_MIRRORS="arch,alpine,kali"      # comma-separated slugs
 export EZMIRROR_VOLUME="/mnt/data/mirrors"       # optional: storage path
 export EZMIRROR_WEBHOOK="https://discord.com/api/webhooks/..."  # optional alerts
 export EZMIRROR_TORRENTS="yes"                   # optional torrent seeding
+export EZMIRROR_LOGO_URL="https://example.com/favicon.ico"
 sudo bash setup.sh --unattended
 ```
 
