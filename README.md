@@ -134,9 +134,10 @@ Each distro has its own mirror submission process — check their documentation.
 GPL-3.0
 
 ## Screenshots
-<img width="1864" height="940" alt="Screenshot From 2026-03-29 09-56-57" src="https://github.com/user-attachments/assets/350660dc-66bd-4c11-8683-07a801910db3" />
-<img width="1864" height="940" alt="Screenshot From 2026-03-29 09-57-37" src="https://github.com/user-attachments/assets/b4b5a9be-6a76-459f-a10b-413e07e3658a" />
-<img width="1864" height="940" alt="Screenshot From 2026-03-29 09-57-22" src="https://github.com/user-attachments/assets/ed291a5a-a717-4506-a64b-6cd164320672" />
+<img width="1861" height="940" alt="image" src="https://github.com/user-attachments/assets/60dd499d-fc61-4300-b606-4802c8f56d8a" />
+<img width="1861" height="940" alt="image" src="https://github.com/user-attachments/assets/09a4ff91-51eb-4c80-8728-2431512fb971" />
+<img width="1861" height="940" alt="image" src="https://github.com/user-attachments/assets/949654c2-e0d9-4409-a4f8-95901a92f4f6" />
+
 
 ## Credits 
 
