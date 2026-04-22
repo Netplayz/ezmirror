@@ -15,16 +15,16 @@ sudo bash setup.sh
 For unattended / CI deploys:
 
 ```bash
-export EZMIRROR_LAB_NAME="Xyz Open Source Lab"
-export EZMIRROR_DOMAIN="mirror.example.com"
+export EZMIRROR_LAB_NAME="MouseCorp Open Source Lab"
+export EZMIRROR_DOMAIN="mirror.mousecorp.xyz"
 export EZMIRROR_LOCATION="Philadelphia, PA, US"
 export EZMIRROR_GH_USER="netplayz"
-export EZMIRROR_MIRRORS="arch,alpine,kali"      # comma-separated slugs
-export EZMIRROR_VOLUME="/mnt/data/mirrors"       # optional: storage path
-export EZMIRROR_WEBHOOK="https://discord.com/api/webhooks/..."  # optional alerts
-export EZMIRROR_TORRENTS="yes"                   # optional torrent seeding
-export EZMIRROR_LOGO_URL="https://example.com/favicon.ico"
-sudo bash setup.sh --unattended
+export EZMIRROR_WEB_SERVER="nginx"    # caddy, nginx, or apache2
+export EZMIRROR_MIRRORS="arch,debian,ubuntu,alpine,kali,rocky"
+export EZMIRROR_VOLUME="/mnt/data/mirrors"
+export EZMIRROR_WEBHOOK="https://discord.com/api/webhooks/..."
+export EZMIRROR_TORRENTS="yes"
+
 ```
 
 ## What Gets Installed
