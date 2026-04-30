@@ -842,7 +842,7 @@ generate_listing_page() {
         <th class="col-size" onclick="sortTable(2)">Size ↕</th>
       </tr></thead>
       <tbody>
-        <tr><td class="col-name"><a href="${parent_href}">↑ Parent Directory</a></td><td class="col-date"></td><td class="col-size">—</td></tr>
+        <tr><td class="col-name"><a href="../">↑ Parent Directory</a></td><td class="col-date"></td><td class="col-size">—</td></tr>
       </tbody>
     </table>
   </div>
@@ -853,14 +853,14 @@ function fmtBytes(b){if(!b||isNaN(b))return'—';const u=['B','KiB','MiB','GiB']
 function fmtTime(t){if(!t)return'—';return new Date(t*1000).toISOString().slice(0,16).replace('T',' ');}
 var rows=[];
 function addRow(name,isDir,size,mtime){
-  const ico=isDir?'📁':'📄',href='${base_href}'+name+(isDir?'/':'');
+  const ico=isDir?'📁':'📄',href='./'+name+(isDir?'/':'');
   const tr=document.createElement('tr');
   tr.dataset.name=name.toLowerCase(); tr.dataset.size=isDir?-1:(size||0); tr.dataset.mtime=mtime||0;
   tr.innerHTML='<td class="col-name"><a href="'+href+'">'+ico+' '+name+(isDir?'/':'')+'</a></td><td class="col-date">'+fmtTime(mtime)+'</td><td class="col-size">'+(isDir?'—':fmtBytes(size))+'</td>';
   document.querySelector('#listing tbody').appendChild(tr);
   rows.push(tr);
 }
-fetch('${files_json}').then(r=>r.json())
+fetch('./files.json').then(r=>r.json())
   .then(es=>es.filter(e=>e.name!=='index.html'&&e.name!=='files.json')
     .sort((a,b)=>(a.type==='directory')!==(b.type==='directory')?a.type==='directory'?-1:1:a.name.localeCompare(b.name))
     .forEach(e=>addRow(e.name,e.type==='directory',e.size,e.mtime))).catch(()=>{});
@@ -1011,7 +1011,7 @@ generate_mirror_page() {
         <th class="col-size" onclick="sortTable(2)">Size ↕</th>
       </tr></thead>
       <tbody>
-        <tr><td class="col-name"><a href="/pub/linux/">↑ Parent Directory</a></td><td class="col-date"></td><td class="col-size">—</td></tr>
+        <tr><td class="col-name"><a href="../">↑ Parent Directory</a></td><td class="col-date"></td><td class="col-size">—</td></tr>
       </tbody>
     </table>
   </div>
@@ -1047,14 +1047,14 @@ function fmtTime(t){if(!t)return'—';return new Date(t*1000).toISOString().slic
 var rows=[];
 function addRow(name,isDir,size,mtime){
   const ico=isDir?'📁':name.endsWith('.iso')?'💿':name==='SHA256SUMS'?'🔒':name.endsWith('.torrent')?'🌱':'📄';
-  const href='/pub/linux/${slug}/'+name+(isDir?'/':'');
+  const href='./'+name+(isDir?'/':'');
   const tr=document.createElement('tr');
   tr.dataset.name=name.toLowerCase(); tr.dataset.size=isDir?-1:(size||0); tr.dataset.mtime=mtime||0;
   tr.innerHTML='<td class="col-name"><a href="'+href+'">'+ico+' '+name+(isDir?'/':'')+'</a></td><td class="col-date">'+fmtTime(mtime)+'</td><td class="col-size">'+(isDir?'—':fmtBytes(size))+'</td>';
   document.querySelector('#listing tbody').appendChild(tr);
   rows.push(tr);
 }
-fetch('/pub/linux/${slug}/files.json').then(r=>r.json())
+fetch('./files.json').then(r=>r.json())
   .then(entries=>entries
     .filter(e=>e.name!=='index.html'&&e.name!=='files.json')
     .sort((a,b)=>(a.type==='directory')!==(b.type==='directory')?a.type==='directory'?-1:1:a.name.localeCompare(b.name))
@@ -1118,6 +1118,16 @@ nginx_common="
         index index.html;
         sendfile on; tcp_nopush on; tcp_nodelay on;
         autoindex on;
+    }
+
+    # rclone-compatible plain directory listing (no JS, relative links)
+    # Point rclone at: https://${DOMAIN}/pub/.rclone/
+    location /pub/.rclone/ {
+        alias ${PUB_DIR}/;
+        index .nonexistent;
+        autoindex on;
+        autoindex_format html;
+        add_header X-Robots-Tag "noindex, nofollow" always;
     }
 
     location / { try_files \$uri \$uri/ =404; }
@@ -1547,7 +1557,7 @@ generate_dir_index() {
         <th class="col-size" onclick="sortTable(2)">Size ↕</th>
       </tr></thead>
       <tbody>
-        <tr><td class="col-name"><a href="${parent_href}">↑ Parent Directory</a></td><td class="col-date"></td><td class="col-size">—</td></tr>
+        <tr><td class="col-name"><a href="../">↑ Parent Directory</a></td><td class="col-date"></td><td class="col-size">—</td></tr>
       </tbody>
     </table>
   </div>
@@ -1559,14 +1569,14 @@ function fmtTime(t){if(!t)return'—';return new Date(t*1000).toISOString().slic
 var rows=[];
 function addRow(name,isDir,size,mtime){
   const ico=isDir?'📁':name.endsWith('.iso')?'💿':name==='SHA256SUMS'?'🔒':name.endsWith('.torrent')?'🌱':'📄';
-  const href='${base_href}'+name+(isDir?'/':'');
+  const href='./'+name+(isDir?'/':'');
   const tr=document.createElement('tr');
   tr.dataset.name=name.toLowerCase(); tr.dataset.size=isDir?-1:(size||0); tr.dataset.mtime=mtime||0;
   tr.innerHTML='<td class="col-name"><a href="'+href+'">'+ico+' '+name+(isDir?'/':'')+'</a></td><td class="col-date">'+fmtTime(mtime)+'</td><td class="col-size">'+(isDir?'—':fmtBytes(size))+'</td>';
   document.querySelector('#listing tbody').appendChild(tr);
   rows.push(tr);
 }
-fetch('${base_href}files.json').then(r=>r.json())
+fetch('./files.json').then(r=>r.json())
   .then(es=>es.filter(e=>e.name!=='index.html'&&e.name!=='files.json')
     .sort((a,b)=>(a.type==='directory')!==(b.type==='directory')?a.type==='directory'?-1:1:a.name.localeCompare(b.name))
     .forEach(e=>addRow(e.name,e.type==='directory',e.size,e.mtime))).catch(()=>{});
