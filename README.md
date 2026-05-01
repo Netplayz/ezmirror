@@ -118,6 +118,37 @@ systemctl status ezmirror-sync.timer
 - **File search** — client-side filter on all listing pages
 - **Sortable columns** — click Name / Last Modified / Size to sort
 - **Live status badge** — per-mirror pages show last sync time from `status.json`
+- **rclone endpoint** — plain nginx autoindex at `/pub/.rclone/` for machine scraping
+
+## rclone Integration
+
+ezmirror's default web frontend uses JavaScript to render file listings, which rclone's HTTP remote cannot scrape. A separate plain-HTML endpoint is available at `/pub/.rclone/` — served by nginx's built-in `autoindex` with no JavaScript and relative links, which is exactly what rclone expects.
+
+**Configure an rclone remote:**
+
+```ini
+[mymirror]
+type = http
+url = https://your.domain/pub/.rclone/
+```
+
+To point at a specific mirror subdirectory:
+
+```ini
+[nyarch]
+type = http
+url = https://your.domain/pub/.rclone/linux/nyarch/
+```
+
+Then use it like any other rclone remote:
+
+```bash
+rclone ls nyarch:
+rclone copy nyarch:gnome/ /local/path/
+rclone sync nyarch: /local/path/ --progress
+```
+
+> **Note:** The `/pub/.rclone/` endpoint is tagged `noindex, nofollow` so it won't appear in search engines. The human-readable UI at `/pub/` is unaffected.
 
 ## Upstream Registration
 
