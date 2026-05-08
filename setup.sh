@@ -28,6 +28,7 @@ UNATTENDED=false
 for _arg in "$@"; do [[ "$_arg" == "--unattended" ]] && UNATTENDED=true; done
 
 ask() {
+    # ask "prompt text" VARNAME "default" [ENV_VAR]
     local prompt="$1" varname="$2" default="$3" envvar="${4:-}"
     if [[ -n "$envvar" && -n "${!envvar:-}" ]]; then
         printf -v "$varname" '%s' "${!envvar}"; return
@@ -42,6 +43,13 @@ ask() {
 # =============================================================================
 # Mirror catalog
 # Format: slug|Display Name|Description|Upstream URL|Sync Method|Est. Size|warn|interval|bandwidth|retention_days|retention_max_gib
+#
+# Sync methods: rsync, rclone-sftp, rclone-http, original, mirror
+# warn field         : "large" shows disk space caution; blank = none
+# interval           : sync frequency, e.g. 1h, 6h, 12h, 24h (default 6h if blank)
+# bandwidth          : rsync bandwidth limit in Mbps; 0 = unlimited (default)
+# retention_days     : delete files older than N days; 0 = keep forever (default)
+# retention_max_gib  : delete oldest files if total exceeds N GiB; 0 = no limit (default)
 # =============================================================================
 
 MIRROR_CATALOG=(
@@ -159,6 +167,7 @@ prompt_custom_mirror() {
     read -rp "  Slug (e.g. alpine):                 " cslug
     [[ -z "$cslug" ]] && { warn "Slug cannot be empty."; return; }
 
+    # Duplicate slug check
     local all_slugs=()
     for (( i=0; i<${#MIRROR_CATALOG[@]}; i++ )); do all_slugs+=("$(catalog_field "$i" 0)"); done
     for cm in "${CUSTOM_MIRRORS[@]:-}"; do all_slugs+=("$(echo "$cm" | cut -d'|' -f1)"); done
@@ -371,6 +380,7 @@ select_volume() {
     echo -e "  Recommended: at least ${Y}500 GiB${N} free (multi-TiB for large mirrors)."
     echo ""
 
+    # Respect EZMIRROR_VOLUME env var
     if [[ -n "${EZMIRROR_VOLUME:-}" ]]; then
         MIRROR_BASE_DIR="${EZMIRROR_VOLUME%/}"
         ok "Volume (env): ${MIRROR_BASE_DIR}"; return
@@ -507,10 +517,12 @@ for pkg in nginx rsync jq curl git moreutils; do
     dpkg -s "$pkg" &>/dev/null && ok "$pkg" || { apt-get install -y -qq "$pkg" 2>/dev/null; ok "$pkg"; }
 done
 
+# mktorrent for torrent seeding
 if [[ "$ENABLE_TORRENTS" == true ]]; then
     dpkg -s mktorrent &>/dev/null && ok "mktorrent" || { apt-get install -y -qq mktorrent 2>/dev/null; ok "mktorrent"; }
 fi
 
+# rclone — only if needed
 needs_rclone=false
 for slug in "${SELECTED_MIRRORS[@]}"; do
     method="$(get_mirror_entry "$slug" | cut -d'|' -f5)"
@@ -577,6 +589,7 @@ ok "$MIRRORS_CONF"
 } > "${CONF_DIR}/paths.conf"
 ok "${CONF_DIR}/paths.conf"
 
+# Initialise status.json
 echo '{"generated":0,"mirrors":{}}' > "${WEBROOT}/status.json"
 chown www-data:www-data "${WEBROOT}/status.json"
 ok "${WEBROOT}/status.json"
@@ -586,6 +599,7 @@ hdr "4. HTML pages"
 # =============================================================================
 
 # ── Branding CSS injection ─────────────────────────────────────────────────────
+# Load branding config and generate CSS overrides for customization
 BRANDING_CSS=""
 [[ -f /etc/ezmirror/branding.conf ]] && source /etc/ezmirror/branding.conf || true
 
@@ -601,12 +615,14 @@ if [[ -n "${SECONDARY_COLOR:-}" ]]; then
     [data-theme=\"light\"] { --secondary: ${SECONDARY_COLOR}; }"
 fi
 
+# Load custom CSS from file if specified
 CUSTOM_CSS_INJECT=""
 if [[ -n "${CUSTOM_CSS:-}" && -f "${CUSTOM_CSS}" ]]; then
     CUSTOM_CSS_INJECT="$(cat "${CUSTOM_CSS}")"
     info "Custom CSS loaded from ${CUSTOM_CSS}"
 fi
 
+# Generate logo HTML if URL is provided
 LOGO_HTML=""
 if [[ -n "${LOGO_URL:-}" ]]; then
     LOGO_HTML="<img src=\"${LOGO_URL}\" alt=\"Logo\" class=\"nav-logo-img\" style=\"height:32px;width:auto;margin-right:.5rem;\">"
@@ -626,18 +642,6 @@ THEME_TOGGLE_JS='<script>
 </script>'
 
 THEME_TOGGLE_BTN='<button id="theme-btn" onclick="(function(){var h=document.documentElement,c=h.getAttribute(\"data-theme\")||\"auto\",n=c===\"dark\"?\"light\":\"dark\";h.setAttribute(\"data-theme\",n);localStorage.setItem(\"em-theme\",n);})();" title="Toggle dark/light mode" style="background:none;border:1px solid var(--border);color:var(--muted);padding:.3rem .6rem;border-radius:4px;cursor:pointer;font-family:var(--mono);font-size:.72rem;">◐</button>'
-
-# ── Plain index placeholder ────────────────────────────────────────────────────
-# Written at setup time; overwritten by ezmirror-sync on first sync with
-# a fully baked static listing. Served to CLI/package-manager user agents
-# (rclone, wget, curl, APT, pacman) by the nginx UA map so they never
-# receive the JS-dependent index.html.
-plain_index_placeholder() {
-    # plain_index_placeholder OUTFILE TITLE PARENT_HREF
-    local outfile="$1" title="$2" parent_href="$3"
-    printf '<!DOCTYPE html>\n<html>\n<head><title>Index of %s</title></head>\n<body>\n<h1>Index of %s</h1>\n<pre>\n<a href="%s">../</a>\n</pre>\n<hr>\n</body>\n</html>\n' \
-        "$title" "$title" "$parent_href" > "$outfile"
-}
 
 # ── Homepage ──────────────────────────────────────────────────────────────────
 cat > "${WEBROOT}/index.html" << HOMEOF
@@ -857,7 +861,7 @@ function addRow(name,isDir,size,mtime){
   rows.push(tr);
 }
 fetch('./files.json').then(r=>r.json())
-  .then(es=>es.filter(e=>e.name!=='index.html'&&e.name!=='index.plain.html'&&e.name!=='files.json')
+  .then(es=>es.filter(e=>e.name!=='index.html'&&e.name!=='files.json')
     .sort((a,b)=>(a.type==='directory')!==(b.type==='directory')?a.type==='directory'?-1:1:a.name.localeCompare(b.name))
     .forEach(e=>addRow(e.name,e.type==='directory',e.size,e.mtime))).catch(()=>{});
 document.getElementById('search').addEventListener('input',function(){
@@ -889,8 +893,6 @@ generate_listing_page \
     "/pub/files.json" "/pub/" \
     > "${PUB_DIR}/index.html"
 ok "pub/index.html"
-plain_index_placeholder "${PUB_DIR}/index.plain.html" "/pub" "/"
-ok "pub/index.plain.html"
 
 generate_listing_page \
     "/pub/linux" \
@@ -898,8 +900,6 @@ generate_listing_page \
     "/pub/linux/files.json" "/pub/linux/" \
     > "${LINUX_DIR}/index.html"
 ok "pub/linux/index.html"
-plain_index_placeholder "${LINUX_DIR}/index.plain.html" "/pub/linux" "/pub/"
-ok "pub/linux/index.plain.html"
 
 generate_mirror_page() {
     local slug="$1" name="$2" desc="$3" upstream="$4" method="$5"
@@ -1028,6 +1028,7 @@ generate_mirror_page() {
 </div>
 <script>
 document.getElementById('gen-time').textContent='Generated '+new Date().toISOString().slice(0,16).replace('T',' ')+' UTC';
+// Live status badge
 fetch('/status.json').then(r=>r.json()).then(data=>{
   const m=(data.mirrors||{})['${slug}'];
   if(!m)return;
@@ -1037,8 +1038,10 @@ fetch('/status.json').then(r=>r.json()).then(data=>{
   if(m.exit_code===0){badge.classList.add('ok');badge.textContent='✓ synced '+ago+'h ago';}
   else{badge.classList.add('err');badge.textContent='✗ last sync failed';}
 }).catch(()=>{});
+// Sync notice fallback
 const syncNotice=document.getElementById('sync-notice');
 if(syncNotice){fetch(window.location.href,{method:'HEAD'}).then(r=>{const lm=r.headers.get('Last-Modified');if(lm)syncNotice.textContent='Last modified: '+new Date(lm).toISOString().slice(0,16).replace('T',' ')+' UTC';}).catch(()=>{});}
+// File listing
 function fmtBytes(b){if(!b||isNaN(b))return'—';const u=['B','KiB','MiB','GiB'];let i=0,n=+b;while(n>=1024&&i<3){n/=1024;i++;}return n.toFixed(i?1:0)+'\u202f'+u[i];}
 function fmtTime(t){if(!t)return'—';return new Date(t*1000).toISOString().slice(0,16).replace('T',' ');}
 var rows=[];
@@ -1053,7 +1056,7 @@ function addRow(name,isDir,size,mtime){
 }
 fetch('./files.json').then(r=>r.json())
   .then(entries=>entries
-    .filter(e=>e.name!=='index.html'&&e.name!=='index.plain.html'&&e.name!=='files.json')
+    .filter(e=>e.name!=='index.html'&&e.name!=='files.json')
     .sort((a,b)=>(a.type==='directory')!==(b.type==='directory')?a.type==='directory'?-1:1:a.name.localeCompare(b.name))
     .forEach(e=>addRow(e.name,e.type==='directory',e.size,e.mtime))).catch(()=>{});
 document.getElementById('search').addEventListener('input',function(){
@@ -1073,10 +1076,6 @@ function sortTable(col){
 </html>
 MIREOF
     ok "pub/linux/${slug}/index.html"
-
-    # Plain placeholder — overwritten by ezmirror-sync on first sync
-    plain_index_placeholder "${mirror_dir}/index.plain.html" "/pub/linux/${slug}" "/pub/linux/"
-    ok "pub/linux/${slug}/index.plain.html"
 }
 
 for slug in "${SELECTED_MIRRORS[@]}"; do
@@ -1095,30 +1094,13 @@ hdr "5. nginx config"
        "/etc/nginx/sites-available/default.bak.$(date +%s)" && \
     info "Backed up existing nginx config"
 
-# ── CLI user-agent → plain index map ─────────────────────────────────────────
-# Serves index.plain.html (fully static, no JS) to tools that don't execute
-# JavaScript: rclone, wget, curl, APT, and pacman.
-# Lives in conf.d/ so it loads inside the http{} block before site configs.
-cat > /etc/nginx/conf.d/ezmirror-ua-map.conf << 'UAMAPEOF'
-# ezmirror — UA-based index routing
-# CLI/package-manager agents get index.plain.html (static, no JS).
-# Browsers get index.html (JS-enhanced, fetches files.json).
-map $http_user_agent $ezmirror_index_file {
-    ~*(rclone/|Wget/|curl/|Debian\ APT-HTTP/|pacman/)  "index.plain.html";
-    default                                             "index.html";
-}
-UAMAPEOF
-ok "/etc/nginx/conf.d/ezmirror-ua-map.conf"
-
 SSL_CERT="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
 SSL_KEY="/etc/letsencrypt/live/${DOMAIN}/privkey.pem"
 SSL_OPTS="/etc/letsencrypt/options-ssl-nginx.conf"
 
-# $ezmirror_index_file resolves to index.plain.html or index.html per UA map.
-# Falls back to index.html if index.plain.html is missing (e.g. before first sync).
 nginx_common="
     root ${WEBROOT};
-    index \$ezmirror_index_file index.html index.htm;
+    index index.html index.htm;
     include /etc/nginx/mime.types;
 
     # status.json — no cache so it's always fresh
@@ -1133,9 +1115,19 @@ nginx_common="
 
     location /pub/ {
         alias ${PUB_DIR}/;
-        index \$ezmirror_index_file index.html;
+        index index.html;
         sendfile on; tcp_nopush on; tcp_nodelay on;
         autoindex on;
+    }
+
+    # rclone-compatible plain directory listing (no JS, relative links)
+    # Point rclone at: https://${DOMAIN}/pub/.rclone/
+    location /pub/.rclone/ {
+        alias ${PUB_DIR}/;
+        index .nonexistent;
+        autoindex on;
+        autoindex_format html;
+        add_header X-Robots-Tag "noindex, nofollow" always;
     }
 
     location / { try_files \$uri \$uri/ =404; }
@@ -1185,7 +1177,7 @@ NGINX
     warn "Run: sudo certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}"
 fi
 
-# Create initial ezmirror-mirrors.conf (empty, populated by sync)
+# Create initial ezmirror-mirrors.conf (empty, will be populated by sync)
 cat > /etc/nginx/ezmirror-mirrors.conf << 'MIRRORSEOF'
 # ezmirror dynamic mirror locations
 # Generated by ezmirror-sync — do not edit manually
@@ -1236,6 +1228,7 @@ for slug in "${SELECTED_MIRRORS[@]}"; do
     [[ "$method" == "mirror"   ]] && MIRROR_TYPE_MIRRORS+=("$slug")
 done
 
+# ── 7a. Credentials for mirror-type upstreams ────────────────────────────────
 if [[ ${#MIRROR_TYPE_MIRRORS[@]} -gt 0 ]]; then
     for slug in "${MIRROR_TYPE_MIRRORS[@]}"; do
         secrets_file="${CONF_DIR}/${slug}.secrets"
@@ -1250,6 +1243,7 @@ if [[ ${#MIRROR_TYPE_MIRRORS[@]} -gt 0 ]]; then
     done
 fi
 
+# ── 7b. rsyncd config (push for originals + read-only for all) ───────────────
 RSYNCD_CONF="/etc/rsyncd.conf"
 
 build_rsyncd_conf() {
@@ -1277,6 +1271,7 @@ build_rsyncd_conf() {
     comment     = ${p[1]} — ${p[2]}
     read only   = yes
     list        = yes
+    # Restrict by IP for production: hosts allow = 1.2.3.4
 ROMOD
         done
 
@@ -1296,6 +1291,8 @@ ROMOD
     list         = yes
     auth users   = ${push_user}
     secrets file = /etc/rsyncd.secrets
+    # Restrict to trusted IPs in production:
+    # hosts allow = 1.2.3.4
     hosts deny   = *
     hosts allow  = *
 RWMOD
@@ -1387,12 +1384,13 @@ LOGEOF
 ok "/etc/logrotate.d/ezmirror"
 
 # =============================================================================
-hdr "9. ezmirror-sync (with automatic index.html + index.plain.html generation)"
+hdr "9. ezmirror-sync (with automatic index.html generation)"
 # =============================================================================
 
 cat > "$SYNC_BIN" << 'SYNCEOF'
 #!/usr/bin/env bash
 # ezmirror-sync — sync all (or one) configured mirrors
+# Automatically generates index.html for all directories and dynamic nginx config
 # Usage:
 #   ezmirror-sync                     sync all due mirrors
 #   ezmirror-sync --dry-run           simulate without writing
@@ -1426,6 +1424,7 @@ done
 log()  { local l="$1"; shift; echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$l] $*" | tee -a "$LOGFILE"; }
 logq() { local l="$1"; shift; echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$l] $*" >> "$LOGFILE"; }
 
+# ── Lock file — prevent overlapping syncs ─────────────────────────────────────
 exec 200>"$LOCKFILE"
 if ! flock -n 200; then
     log WARN "Another ezmirror-sync is already running (lock: ${LOCKFILE}). Exiting."
@@ -1433,6 +1432,7 @@ if ! flock -n 200; then
 fi
 trap 'flock -u 200; rm -f "$LOCKFILE"' EXIT INT TERM
 
+# ── Alerting ──────────────────────────────────────────────────────────────────
 send_alert() {
     local slug="$1" message="$2"
     local title="ezmirror sync failure: ${slug} on ${DOMAIN}"
@@ -1448,51 +1448,13 @@ send_alert() {
     fi
 }
 
-# ── Plain index writer ────────────────────────────────────────────────────────
-# Generates a fully static index.plain.html from the live filesystem.
-# Served to CLI/package-manager UAs (rclone, wget, curl, APT, pacman) by the
-# nginx UA map — these agents don't execute JS and would see an empty table
-# from index.html. Apache-autoindex-compatible: dirs first, <a href> links only.
-write_plain_index() {
-    local dir="$1" href="$2" title="$3"
-    local parent_href; parent_href="$(dirname "${href%/}")/"
-    [[ "$parent_href" == "//" ]] && parent_href="/"
-    {
-        printf '<!DOCTYPE html>\n<html>\n<head><title>Index of %s</title></head>\n<body>\n' "$title"
-        printf '<h1>Index of %s</h1>\n<pre>\n' "$title"
-        printf '<a href="%s">../</a>\n' "$parent_href"
-
-        # Directories first
-        while IFS= read -r f; do
-            [[ -e "$f" ]] || continue
-            local n; n=$(basename "$f")
-            local mt; mt=$(date -d "@$(stat -c%Y "$f")" '+%Y-%m-%d %H:%M' 2>/dev/null || printf '%s' '-               ')
-            local pad=$(( 50 - ${#n} - 1 )); (( pad < 1 )) && pad=1
-            printf '<a href="%s/">%s/</a>%*s%s    -\n' "$n" "$n" "$pad" '' "$mt"
-        done < <(find "$dir" -maxdepth 1 -mindepth 1 -type d | sort)
-
-        # Files
-        while IFS= read -r f; do
-            [[ -e "$f" ]] || continue
-            local n; n=$(basename "$f")
-            [[ "$n" == "index.html" || "$n" == "index.plain.html" || "$n" == "files.json" ]] && continue
-            local mt; mt=$(date -d "@$(stat -c%Y "$f")" '+%Y-%m-%d %H:%M' 2>/dev/null || printf '%s' '-               ')
-            local b; b=$(stat -c%s "$f" 2>/dev/null || echo 0)
-            local sz; sz=$(awk "BEGIN{b=$b;if(b>=1073741824)printf \"%.1fG\",b/1073741824;else if(b>=1048576)printf \"%.1fM\",b/1048576;else if(b>=1024)printf \"%.1fK\",b/1024;else printf \"%dB\",b}")
-            local pad=$(( 50 - ${#n} )); (( pad < 1 )) && pad=1
-            printf '<a href="%s">%s</a>%*s%s    %s\n' "$n" "$n" "$pad" '' "$mt" "$sz"
-        done < <(find "$dir" -maxdepth 1 -mindepth 1 -type f | sort)
-
-        printf '</pre>\n<hr>\n</body>\n</html>\n'
-    } > "${dir}/index.plain.html"
-}
-
-# ── JS index writer ────────────────────────────────────────────────────────────
-# Breadcrumbs built root-to-leaf; fetches files.json at runtime.
+# ── Generate index.html for a directory ────────────────────────────────────────
+# FIX: breadcrumbs built root-to-leaf by collecting segments then reversing
 generate_dir_index() {
     local dir="$1" base_href="$2" title_path="$3"
     [[ ! -d "$dir" ]] && return
 
+    # Collect path segments in reverse order, then flip
     local crumb_parts=()
     local current_path="${base_href%/}"
     while [[ "$current_path" != "/" && "$current_path" != "." && -n "$current_path" ]]; do
@@ -1500,12 +1462,14 @@ generate_dir_index() {
         current_path=$(dirname "$current_path")
     done
 
+    # Reverse into root-first order
     local n=${#crumb_parts[@]}
     local reversed=()
     for (( ci=n-1; ci>=0; ci-- )); do
         reversed+=("${crumb_parts[$ci]}")
     done
 
+    # Build breadcrumb HTML: intermediate segments are links, last is a plain span
     local breadcrumbs="<a href=\"/\">${DOMAIN}</a>"
     local total=${#reversed[@]}
     for (( ci=0; ci<total; ci++ )); do
@@ -1613,7 +1577,7 @@ function addRow(name,isDir,size,mtime){
   rows.push(tr);
 }
 fetch('./files.json').then(r=>r.json())
-  .then(es=>es.filter(e=>e.name!=='index.html'&&e.name!=='index.plain.html'&&e.name!=='files.json')
+  .then(es=>es.filter(e=>e.name!=='index.html'&&e.name!=='files.json')
     .sort((a,b)=>(a.type==='directory')!==(b.type==='directory')?a.type==='directory'?-1:1:a.name.localeCompare(b.name))
     .forEach(e=>addRow(e.name,e.type==='directory',e.size,e.mtime))).catch(()=>{});
 document.getElementById('search').addEventListener('input',function(){
@@ -1637,11 +1601,10 @@ function sortTable(col){
 </body>
 </html>
 DIREOF
-
-    # Plain index — written from live filesystem, no JS needed
-    write_plain_index "$dir" "$base_href" "$title_path"
 }
 
+# ── Generate dynamic nginx mirror config ─────────────────────────────────────
+# FIX: reads mirrors.conf directly instead of using undefined ${SELECTED_MIRRORS[@]}
 generate_nginx_mirrors_conf() {
     {
         echo "# ezmirror dynamic mirror locations"
@@ -1652,7 +1615,7 @@ generate_nginx_mirrors_conf() {
             [[ -z "${slug:-}" || "${slug:0:1}" == "#" ]] && continue
             echo "location /pub/linux/${slug}/ {"
             echo "    alias ${LINUX_DIR}/${slug}/;"
-            echo "    index \$ezmirror_index_file index.html;"
+            echo "    index index.html;"
             echo "    sendfile on; tcp_nopush on; tcp_nodelay on;"
             echo "    autoindex on;"
             echo "}"
@@ -1661,6 +1624,7 @@ generate_nginx_mirrors_conf() {
     } > /etc/nginx/ezmirror-mirrors.conf
 }
 
+# Interval check ────────────────────────────────────────────────────────
 interval_to_seconds() {
     local s="$1"
     local num="${s%[hHmMdD]}" unit="${s: -1}"
@@ -1668,7 +1632,7 @@ interval_to_seconds() {
         h) echo $(( num * 3600 ))  ;;
         m) echo $(( num * 60 ))    ;;
         d) echo $(( num * 86400 )) ;;
-        *) echo $(( num * 3600 ))  ;;
+        *) echo $(( num * 3600 ))  ;; # default: treat as hours
     esac
 }
 
@@ -1684,6 +1648,7 @@ is_sync_due() {
     (( now - last_sync >= interval_secs ))
 }
 
+# ── Disk space check ─────────────────────────────────────────────────────
 check_disk_space() {
     local dir="$1"
     local avail_gib
@@ -1694,13 +1659,14 @@ check_disk_space() {
     fi
 }
 
+# ── JSON helpers using jq ─────────────────────────────────────────────────────
 build_files_json() {
     local dir="$1"
     local entries=()
     for f in "$dir"/*; do
         [[ -e "$f" ]] || continue
         local fname; fname=$(basename "$f")
-        [[ "$fname" == "index.html" || "$fname" == "index.plain.html" || "$fname" == "files.json" ]] && continue
+        [[ "$fname" == "index.html" || "$fname" == "files.json" ]] && continue
         local ftype fsize fmtime
         ftype=$(  [[ -d "$f" ]] && echo "directory" || echo "file")
         fsize=$(  [[ -f "$f" ]] && stat -c%s "$f" || echo "null")
@@ -1804,6 +1770,7 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
         continue
     fi
 
+    # ── Upstream health check ─────────────────────────────────────────────────
     upstream_health="ok"
     upstream_check_time=$(date +%s)
     upstream_response_ms=0
@@ -1899,6 +1866,7 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
                    --log-file "$LOGFILE" --log-level INFO --exclude "*.part"
                    --http-no-slash)
             [[ "$DRY_RUN" == true ]] && flags+=(--dry-run)
+            # Use :http,url=URL: syntax for proper recursive directory traversal
             rclone sync ":http,url=$(echo "$upstream" | sed 's|/$||'):" "${local_dir}/" "${flags[@]}" || {
                 sync_exit=$?
                 log WARN "rclone http for ${slug} exited ${sync_exit}"
@@ -1915,7 +1883,7 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
     sync_exit_codes["$slug"]=$sync_exit
 
     if [[ "$DRY_RUN" == true ]]; then
-        log INFO "  [DRY RUN] skipping SHA256SUMS, index, torrent steps for ${slug}"
+        log INFO "  [DRY RUN] skipping SHA256SUMS, files.json, torrent steps for ${slug}"
         mirror_json_entries+=("$(jq -n --arg sl "$slug" --arg n "$name" --arg d "$desc" --arg m "$method" \
             '{slug:$sl,name:$n,desc:$d,path:("/pub/linux/"+$sl+"/"),method:$m}')")
         continue
@@ -1927,7 +1895,7 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
             ! -name "*.html" ! -name "SHA256SUMS" ! -name "files.json" ! -name "*.torrent" 2>/dev/null)
         [[ ${#regular[@]} -eq 0 ]] && continue
         (cd "$dir" && sha256sum -- "${regular[@]##*/}" 2>/dev/null \
-            | grep -v "SHA256SUMS\|index\.html\|index\.plain\.html\|files\.json" > SHA256SUMS || true)
+            | grep -v "SHA256SUMS\|index\.html\|files\.json" > SHA256SUMS || true)
     done
     log INFO "  [SHA256] ${slug}"
 
@@ -1935,11 +1903,12 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
     build_files_json "$local_dir" > "${local_dir}/files.json"
     log INFO "  [JSON]   ${slug}/files.json"
 
-    # index.html + index.plain.html for mirror root
+    # index.html for mirror root
     generate_dir_index "$local_dir" "/pub/linux/${slug}/" "/pub/linux/${slug}"
-    log INFO "  [INDEX]  ${slug}/index.html + index.plain.html"
+    log INFO "  [INDEX]  ${slug}/index.html"
 
-    # index.html + index.plain.html for all subdirectories
+    # index.html for all subdirectories
+    # FIX: removed invalid 'local' declarations outside functions
     find "$local_dir" -mindepth 1 -type d | while read -r subdir; do
         build_files_json "$subdir" > "${subdir}/files.json"
         rel_path="${subdir#${LINUX_DIR}/}"
@@ -1952,7 +1921,8 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
     # Torrent seeding
     seed_torrents "$slug" "$local_dir"
 
-    # Retention / cleanup
+    # Retention / cleanup — runs after successful sync only
+    # FIX: removed invalid 'local' declarations outside functions
     if [[ "$sync_exit" -eq 0 && "$DRY_RUN" != true ]]; then
         if (( retention_days > 0 || retention_max_gib > 0 )); then
             log INFO "  [CLEANUP] ${slug} (retention: ${retention_days}d / ${retention_max_gib}GiB)"
@@ -1976,6 +1946,7 @@ while IFS='|' read -r slug name desc upstream method _size _warn interval bw_lim
         fi
     fi
 
+    # Update per-mirror status
     update_status_json "$slug" "$sync_exit" "$bw_limit" "${upstream_health:-ok}" "${upstream_check_time:-0}" "${upstream_response_ms:-0}" "$retention_days" "$retention_max_gib"
 
     mirror_json_entries+=("$(jq -n --arg sl "$slug" --arg n "$name" --arg d "$desc" --arg m "$method" \
@@ -1985,7 +1956,7 @@ done < "$CONF"
 
 [[ "$DRY_RUN" == true ]] && { log INFO "=== Dry run complete ==="; exit 0; }
 
-# Top-level files.json + indexes for pub/ and pub/linux/
+# Top-level files.json for pub/ and pub/linux/
 for dir in "$PUB_DIR" "$LINUX_DIR"; do
     [[ -d "$dir" ]] || continue
     build_files_json "$dir" > "${dir}/files.json"
@@ -1994,6 +1965,7 @@ done
 
 update_mirrors_json "${mirror_json_entries[@]:-}"
 
+# Generate dynamic nginx config and reload
 generate_nginx_mirrors_conf
 nginx -t 2>/dev/null && systemctl reload nginx || logq WARN "nginx config reload failed"
 log INFO "[NGINX] ezmirror-mirrors.conf regenerated"
@@ -2001,6 +1973,7 @@ log INFO "[NGINX] ezmirror-mirrors.conf regenerated"
 chown -R www-data:www-data "$PUB_DIR" "${WEBROOT}/mirrors.json" "${WEBROOT}/status.json" 2>/dev/null || true
 chmod -R 755 "$PUB_DIR"
 
+# Final exit code: non-zero if any mirror failed
 overall_exit=0
 for slug in "${!sync_exit_codes[@]}"; do
     [[ "${sync_exit_codes[$slug]}" -ne 0 ]] && overall_exit=1
@@ -2019,6 +1992,7 @@ hdr "10. ezmirror-manage"
 cat > "$MANAGE_BIN" << 'MEOF'
 #!/usr/bin/env bash
 # ezmirror-manage — add, remove, or reconfigure mirrors without re-running setup
+# Usage: sudo ezmirror-manage
 set -euo pipefail
 
 R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m' C='\033[0;36m' B='\033[1m' N='\033[0m'
@@ -2075,6 +2049,7 @@ SELECTED_MIRRORS=()
 CUSTOM_MIRRORS=()
 declare -A MIRROR_CREDS
 
+# Pre-select mirrors from mirrors.conf
 if [[ -f "$MIRRORS_CONF" ]]; then
     while IFS='|' read -r slug name desc upstream method _s _w interval || [[ -n "${slug:-}" ]]; do
         [[ -z "${slug:-}" || "${slug:0:1}" == "#" ]] && continue
@@ -2448,6 +2423,10 @@ VERIFY_BIN="/usr/local/bin/ezmirror-verify"
 cat > "$VERIFY_BIN" << 'VEOF'
 #!/usr/bin/env bash
 # ezmirror-verify — verify mirror integrity vs upstream
+# Usage:
+#   ezmirror-verify [slug] [--quick] [--deep]
+#   --quick  file count + size comparison vs upstream (default)
+#   --deep   validate SHA256SUMS files locally
 set -euo pipefail
 
 CONF_DIR="/etc/ezmirror"
@@ -2480,7 +2459,7 @@ verify_quick() {
     local mirror_dir="${LINUX_DIR}/${slug}"
     [[ -d "$mirror_dir" ]] || { warn "${slug}: mirror directory missing"; return 1; }
 
-    local local_count; local_count=$(find "$mirror_dir" -type f ! -name "index.html" ! -name "index.plain.html" ! -name "files.json" ! -name "SHA256SUMS" | wc -l)
+    local local_count; local_count=$(find "$mirror_dir" -type f ! -name "index.html" ! -name "files.json" ! -name "SHA256SUMS" | wc -l)
     local local_size; local_size=$(du -sb "$mirror_dir" 2>/dev/null | awk '{print $1}' || echo 0)
 
     if [[ "$method" == "original" ]]; then
@@ -2563,6 +2542,10 @@ HEALTH_BIN="/usr/local/bin/ezmirror-health"
 cat > "$HEALTH_BIN" << 'HEOF'
 #!/usr/bin/env bash
 # ezmirror-health — check upstream reachability for all (or one) mirrors
+# Usage:
+#   ezmirror-health [slug]
+#   ezmirror-health --all
+#   ezmirror-health --alert    (only report failures)
 set -euo pipefail
 
 CONF_DIR="/etc/ezmirror"
@@ -2658,6 +2641,10 @@ UPDATE_BIN="/usr/local/bin/ezmirror-update"
 cat > "$UPDATE_BIN" << 'UEOF'
 #!/usr/bin/env bash
 # ezmirror-update — in-place update with zero downtime
+# Usage:
+#   ezmirror-update [--list]         list available versions
+#   ezmirror-update --test VERSION   dry-run test only
+#   ezmirror-update VERSION          perform update
 set -euo pipefail
 
 VERSION_FILE="/etc/ezmirror/version"
@@ -2700,11 +2687,13 @@ TARGET_VERSION="$1"
 
 log "ezmirror update: ${CURRENT_VERSION} → ${TARGET_VERSION}"
 
+# Step 1: Download
 log "Downloading ezmirror ${TARGET_VERSION}…"
 curl -fsSL "https://github.com/netplayz/ezmirror/releases/download/v${TARGET_VERSION}/setup.sh" \
     -o /tmp/ezmirror-setup-new.sh || die "Download failed"
 log "✓ Downloaded"
 
+# Step 2: Backup config
 mkdir -p "$BACKUP_DIR"
 BACKUP_TIME=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="${BACKUP_DIR}/ezmirror_${CURRENT_VERSION}_${BACKUP_TIME}.tar.gz"
@@ -2714,10 +2703,10 @@ tar -czf "$BACKUP_FILE" \
     /etc/systemd/system/ezmirror-* \
     /etc/logrotate.d/ezmirror \
     /etc/nginx/ezmirror-mirrors.conf \
-    /etc/nginx/conf.d/ezmirror-ua-map.conf \
     2>/dev/null || true
 log "✓ Backed up to ${BACKUP_FILE}"
 
+# Step 3: Graceful sync stop — wait up to 5 min for active sync
 log "Waiting for active syncs to finish…"
 for i in {1..300}; do
     pgrep -f "/usr/local/bin/ezmirror-sync" > /dev/null 2>&1 || break
@@ -2726,6 +2715,7 @@ done
 systemctl stop ezmirror-sync.timer ezmirror-sync.service 2>/dev/null || true
 log "✓ Syncs stopped"
 
+# Step 4: Run migration script if available
 MIGRATE_SCRIPT="/opt/ezmirror/migrate-${CURRENT_VERSION}-to-${TARGET_VERSION}.sh"
 if [[ -f "$MIGRATE_SCRIPT" ]]; then
     log "Running migration: ${MIGRATE_SCRIPT}"
@@ -2744,9 +2734,13 @@ else
     done < "$MIRRORS_CONF"
     cp "$MIRRORS_CONF" "${MIRRORS_CONF}.pre-${TARGET_VERSION}.bak"
     mv "$TEMP_CONF" "$MIRRORS_CONF"
-    log "✓ mirrors.conf auto-migrated"
+    log "✓ mirrors.conf auto-migrated (backup: ${MIRRORS_CONF}.pre-${TARGET_VERSION}.bak)"
 fi
 
+# Step 5: Install new binaries
+# FIX: source existing config and export as EZMIRROR_* so --unattended
+#      preserves lab settings, domain, mirrors, and alert config instead
+#      of clobbering everything with placeholder defaults.
 log "Exporting existing config for unattended install…"
 source /etc/ezmirror/lab.conf 2>/dev/null || true
 source /etc/ezmirror/paths.conf 2>/dev/null || true
@@ -2765,6 +2759,7 @@ export EZMIRROR_PRIMARY_COLOR="${PRIMARY_COLOR:-#4ea3e0}"
 export EZMIRROR_SECONDARY_COLOR="${SECONDARY_COLOR:-}"
 export EZMIRROR_CUSTOM_CSS="${CUSTOM_CSS:-}"
 
+# Rebuild mirrors list from mirrors.conf
 if [[ -f /etc/ezmirror/mirrors.conf ]]; then
     _update_slugs=()
     while IFS='|' read -r _slug _rest; do
@@ -2782,8 +2777,10 @@ log "Installing new binaries…"
 bash /tmp/ezmirror-setup-new.sh --unattended || die "Update install failed"
 log "✓ Binaries updated"
 
+# Step 6: Record new version
 echo "$TARGET_VERSION" > "$VERSION_FILE"
 
+# Step 7: Restart services
 log "Restarting services…"
 systemctl daemon-reload
 systemctl restart ezmirror-sync.timer 2>/dev/null || true
@@ -2800,6 +2797,7 @@ ROLLBACK_BIN="/usr/local/bin/ezmirror-rollback"
 cat > "$ROLLBACK_BIN" << 'RBEOF'
 #!/usr/bin/env bash
 # ezmirror-rollback — restore a previous backup
+# Usage: sudo ezmirror-rollback /etc/ezmirror/backups/ezmirror_4.0.0_20260407_134715.tar.gz
 set -euo pipefail
 
 BACKUP="${1:-}"
@@ -2819,6 +2817,7 @@ RBEOF
 chmod +x "$ROLLBACK_BIN"
 ok "$ROLLBACK_BIN"
 
+# Write initial version file if not present
 [[ -f /etc/ezmirror/version ]] || echo "4.1.0" > /etc/ezmirror/version
 
 # =============================================================================
@@ -2855,6 +2854,7 @@ StandardError=journal
 User=root
 EOF
 
+# Find the shortest interval across all selected mirrors to set timer cadence
 min_interval_h=6
 for slug in "${SELECTED_MIRRORS[@]}"; do
     iv="$(get_mirror_entry "$slug" | cut -d'|' -f8)"; iv="${iv:-6h}"
