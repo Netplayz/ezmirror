@@ -64,6 +64,9 @@ def run(cmd, check=True, silent=False):
 
 
 def install_deps():
+    if os.environ.get("EZMIRROR_SKIP_DEPS"):
+        info("Skipping dependencies (EZMIRROR_SKIP_DEPS)")
+        return
     info("Installing dependencies...")
     pkgs = ["nginx", "rsync", "jq", "curl", "git", "moreutils", "build-essential",
             "libpcre3-dev", "libssl-dev", "zlib1g-dev"]
@@ -73,7 +76,7 @@ def install_deps():
     ok("Dependencies installed")
 
     # Install fancyindex module if not present
-    result = subprocess.run(["nginx", "-V"], stderr=subprocess.PIPE, capture_output=True, text=True)
+    result = subprocess.run(["nginx", "-V"], capture_output=True, text=True)
     if "fancyindex" not in result.stderr:
         info("fancyindex module not found, installing nginx-extras...")
         run(["apt-get", "install", "-y", "-qq", "nginx-extras"], silent=True)
@@ -520,7 +523,10 @@ def main():
 
     # 2. Mirror selection
     selected = []
-    if "EZMIRROR_MIRRORS" in os.environ:
+    if unattended and "EZMIRROR_MIRRORS" not in os.environ:
+        selected = list(mirrors)
+        info(f"Unattended: selecting all {len(selected)} mirrors")
+    elif "EZMIRROR_MIRRORS" in os.environ:
         slugs = [s.strip() for s in os.environ["EZMIRROR_MIRRORS"].split(",")]
         selected = [m for m in mirrors if m["slug"] in slugs]
         info(f"Mirrors (env): {[m['slug'] for m in selected]}")
@@ -599,23 +605,28 @@ def main():
     else:
         generate_nginx_config(selected, lab, mirror_dir)
 
-    # Test and reload nginx
+    # Test nginx config
     result = subprocess.run(["nginx", "-t"], capture_output=True, text=True)
-    if result.returncode == 0:
-        subprocess.run(["systemctl", "reload", "nginx"])
+    if result.returncode != 0:
+        warn(f"nginx config error: {result.stderr}")
+
+    # Reload nginx (only if systemd is active)
+    if Path("/run/systemd/system").is_dir():
+        subprocess.run(["systemctl", "reload", "nginx"], capture_output=True)
         ok("nginx reloaded")
     else:
-        warn(f"nginx config error: {result.stderr}")
+        ok("nginx config written (no systemd)")
 
     # 12. Build and install daemon
     built = build_daemon()
     if built:
         install_scripts()
         install_shell_wrappers()
-        setup_systemd(selected)
-        # Start daemon
-        subprocess.run(["systemctl", "enable", "--now", "ezmirord.service"], capture_output=True)
-        ok("ezmirord.service started")
+        # Only set up systemd if available
+        if Path("/run/systemd/system").is_dir():
+            setup_systemd(selected)
+            subprocess.run(["systemctl", "enable", "--now", "ezmirord.service"], capture_output=True)
+            ok("ezmirord.service started")
 
     # 13. Logrotate
     logrotate = f"""/var/log/ezmirror.log {{
@@ -637,7 +648,9 @@ def main():
     cleanup_old_pub()
 
     # 15. Initial sync?
-    if unattended or input(f"\n  Run initial sync now? [y/N]: ").lower() == "y":
+    if unattended and os.environ.get("EZMIRROR_SKIP_INITIAL_SYNC"):
+        warn("Skipped initial sync (EZMIRROR_SKIP_INITIAL_SYNC)")
+    elif unattended or input(f"\n  Run initial sync now? [y/N]: ").lower() == "y":
         info("Syncing...")
         subprocess.run([str(DAEMON_BIN), "--sync"], capture_output=True)
         ok("Initial sync complete")
