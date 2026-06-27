@@ -46,7 +46,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: "ezmirror ${{ github.ref_name }}"
-          body_path: docs/CHANGELOG.md
           files: dist/ezmirror.tar.gz
 
   docker:
