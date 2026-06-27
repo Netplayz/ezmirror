@@ -1,8 +1,15 @@
 # ezmirror
-<p align="center">
-<img width="500" height="500" alt="EZMIRROR-removebg-preview" src="https://github.com/user-attachments/assets/816e7b15-6cc2-464a-a13c-c49643172774" />
-</p>
-A self-hostable Linux distribution mirror infrastructure. Interactive setup, multi-distro support, automated sync, and a clean web frontend.
+
+A self-hostable, production-grade Linux distribution mirror infrastructure with fancyindex templates, a C daemon for metrics/scheduling, and Python/shell management tools.
+
+## Features
+
+- **FancyIndex** — nginx fancyindex module with dark/light themed directory listings
+- **C Daemon** (`ezmirord`) — Prometheus metrics endpoint, health checks, sync scheduling
+- **Python tools** — interactive and unattended setup, mirror management
+- **JSON catalog** — mirror definitions in `mirrors.json`
+- **Production-grade** — metrics, health checks, backup, performance tuning, security hardening
+- **No `/pub/` prefix** — mirrors served directly at `/{slug}/`
 
 ## Quick Start
 
@@ -12,166 +19,88 @@ cd ezmirror
 sudo bash setup.sh
 ```
 
-For unattended / CI deploys:
-
+Unattended:
 ```bash
-export EZMIRROR_LAB_NAME="Xyz Open Source Lab"
+export EZMIRROR_LAB_NAME="My Lab"
 export EZMIRROR_DOMAIN="mirror.example.com"
-export EZMIRROR_LOCATION="Philadelphia, PA, US"
-export EZMIRROR_GH_USER="netplayz"
-export EZMIRROR_MIRRORS="arch,alpine,kali"      # comma-separated slugs
-export EZMIRROR_VOLUME="/mnt/data/mirrors"       # optional: storage path
-export EZMIRROR_WEBHOOK="https://discord.com/api/webhooks/..."  # optional alerts
-export EZMIRROR_TORRENTS="yes"                   # optional torrent seeding
-export EZMIRROR_LOGO_URL="https://example.com/favicon.ico"
+export EZMIRROR_MIRRORS="debian,ubuntu,arch"
 sudo bash setup.sh --unattended
 ```
 
-## What Gets Installed
+## Architecture
 
-| Path | Description |
-|------|-------------|
-| `/usr/local/bin/ezmirror-sync` | Sync all (or one) mirror |
-| `/usr/local/bin/ezmirror-manage` | Add / remove mirrors interactively |
-| `/usr/local/bin/ezmirror-status` | Show per-mirror sync status |
-| `/usr/local/bin/ezmirror-logs` | View / follow sync logs |
-| `/etc/ezmirror/` | Config directory |
-| `/etc/ezmirror/lab.conf` | Lab branding config |
-| `/etc/ezmirror/mirrors.conf` | Active mirror list |
-| `/etc/ezmirror/paths.conf` | Volume/path config |
-| `/etc/ezmirror/alert.conf` | Discord webhook + email alerts |
-| `/var/log/ezmirror.log` | Sync log (rotated via logrotate) |
-| `/var/www/html/status.json` | Machine-readable sync status |
-| `/var/www/html/mirrors.json` | Mirror list for homepage |
-| `/etc/systemd/system/ezmirror-sync.{service,timer}` | Systemd sync timer |
-| `/etc/logrotate.d/ezmirror` | Log rotation config |
+```
+ezmirror/
+  mirrors.json       # Mirror catalog (JSON)
+  setup.sh           # Shell entry point
+  templates/         # FancyIndex header/footer/CSS
+    header.html      #  - prepended to each directory listing
+    footer.html      #  - appended with JS for search/sort
+    style.css        #  - dark/light theme
+  python/
+    setup.py         # Interactive/unattended installer
+    manage.py        # Add/remove mirrors
+  src/
+    main.c           # Daemon entry point
+    config.c         # mirrors.conf parser
+    sync.c           # Sync engine
+    status.c         # Status.json reader/writer
+    metrics.c        # HTTP server: /metrics, /healthz
+  bin/               # Shell wrappers (installed to /usr/local/bin)
+```
 
-## Default Supported Mirrors
+## Components
 
-| Slug | Distro | Size | Default Interval |
-|------|--------|------|-----------------|
-| `debian` | Debian GNU/Linux | ~2 TiB | 12h |
-| `ubuntu` | Ubuntu | ~2 TiB | 12h |
-| `arch` | Arch Linux | ~120 GiB | 1h |
-| `alpine` | Alpine Linux | ~100 GiB | 6h |
-| `mint` | Linux Mint | ~5 TiB | 24h |
-| `gentoo` | Gentoo Linux | ~500 GiB | 6h |
-| `fedora` | Fedora Linux | ~3 TiB | 12h |
-| `rocky` | Rocky Linux | ~1 TiB | 12h |
-| `almalinux` | AlmaLinux | ~1 TiB | 12h |
-| `centos-stream` | CentOS Stream | ~500 GiB | 12h |
-| `kali` | Kali Linux | ~600 GiB | 6h |
-| `opensuse` | openSUSE | ~2 TiB | 12h |
-| `raspios` | Raspberry Pi OS | ~200 GiB | 12h |
-| `popos` | Pop!_OS | ~300 GiB | 12h |
+| Component | Language | Purpose |
+|-----------|----------|---------|
+| `ezmirord` | C | Daemon: sync scheduling, Prometheus metrics, health endpoint |
+| `setup.py` | Python | Installer: dependencies, nginx config, templates |
+| `manage.py` | Python | Interactive mirror selection |
+| shell wrappers | Bash | ezmirror-sync, ezmirror-logs, ezmirror-backup, etc. |
 
-Plus any number of custom mirrors via the interactive panel or `ezmirror-manage`.
+## Production Features
 
-## CLI Reference
+### Monitoring
+- **Prometheus metrics** at `http://127.0.0.1:9633/metrics`
+- **Health endpoint** at `/healthz` (returns 200/503 for load balancers)
+- **status.json** at `/status.json` with per-mirror sync state, disk usage, upstream health
+
+### Backup
+```bash
+sudo ezmirror-backup              # Full config backup to /etc/ezmirror/backups/
+```
+
+### Performance
+- nginx fancyindex (dynamic listings, no per-directory HTML generation)
+- rsync with bandwidth limiting, hardlink support
+- Sendfile, TCP_NOPUSH, TCP_NODELAY enabled
+
+### Security
+- nginx fancyindex hides dotfiles
+- rsyncd host restrictions
+- TLS via Let's Encrypt (auto-detected)
+- Rate limiting ready
+
+### Reliability
+- `flock`-based sync lock prevents overlapping runs
+- Per-mirror sync intervals (1h for Arch, 12h for Debian, etc.)
+- Disk space pre-check before sync
+- Upstream health check before syncing
+- Failure alerts via Discord webhook + email
+
+## Development
 
 ```bash
-# Sync
-sudo ezmirror-sync                    # sync all due mirrors (respects per-mirror intervals.) If you have just uploaded files you must use this command.
-sudo ezmirror-sync --force            # sync all, ignoring intervals
-sudo ezmirror-sync --dry-run          # simulate without writing
-sudo ezmirror-sync --mirror=arch      # sync one mirror now
+# Build C daemon
+make build
 
-# Manage
-sudo ezmirror-manage                  # add / remove mirrors interactively
+# Install to system
+sudo make install
 
-# Status & Logs
-ezmirror-status                       # per-mirror sync status table
-ezmirror-logs                         # last 50 log lines
-ezmirror-logs arch                    # logs for 'arch' only
-ezmirror-logs arch -f                 # follow log for 'arch'
-ezmirror-logs --errors                # only WARN / ERROR lines
-ezmirror-logs --errors -f             # follow errors
-
-# Timer
-systemctl status ezmirror-sync.timer
+# Full setup
+sudo python3 python/setup.py
 ```
-
-## Sync Methods
-
-| Method | Description |
-|--------|-------------|
-| `rsync` | Standard rsync pull from upstream `rsync://` URL |
-| `rclone-sftp` | rclone pull via SFTP (e.g. SourceForge) |
-| `rclone-http` | rclone pull via HTTP/FTP |
-| `original` | This server **is** the origin; no upstream sync |
-| `mirror` | Pull from another self-hosted ezmirror / rsync daemon |
-
-## Features
-
-- **Interactive TUI** — toggle mirrors, add custom entries, choose storage volume
-- **Unattended mode** — full env-var-driven CI/cloud-init support
-- **Per-mirror sync intervals** — Arch syncs every 1h, Debian every 12h, etc.
-- **Sync lock file** — prevents overlapping runs via `flock`
-- **Disk space pre-check** — warns before syncing if volume is low
-- **Failure alerts** — Discord webhook + email on sync errors
-- **Read-only rsync daemon** — lets others mirror from your server
-- **rsyncd push daemon** — for original mirrors, contributors push via rsync
-- **Torrent seeding** — auto-generates `.torrent` files for `.iso` files (optional)
-- **status.json** — machine-readable per-mirror sync state at `/status.json`
-- **Log rotation** — `logrotate` config keeps logs tidy (30-day retention)
-- **Dark / light mode toggle** — `prefers-color-scheme` aware with manual toggle
-- **File search** — client-side filter on all listing pages
-- **Sortable columns** — click Name / Last Modified / Size to sort
-- **Live status badge** — per-mirror pages show last sync time from `status.json`
-- **rclone endpoint** — plain nginx autoindex at `/pub/.rclone/` for machine scraping
-
-## rclone Integration
-
-ezmirror's default web frontend uses JavaScript to render file listings, which rclone's HTTP remote cannot scrape. A separate plain-HTML endpoint is available at `/pub/.rclone/` — served by nginx's built-in `autoindex` with no JavaScript and relative links, which is exactly what rclone expects.
-
-**Configure an rclone remote:**
-
-```ini
-[mymirror]
-type = http
-url = https://your.domain/pub/.rclone/
-```
-
-To point at a specific mirror subdirectory:
-
-```ini
-[nyarch]
-type = http
-url = https://your.domain/pub/.rclone/linux/nyarch/
-```
-
-Then use it like any other rclone remote:
-
-```bash
-rclone ls nyarch:
-rclone copy nyarch:gnome/ /local/path/
-rclone sync nyarch: /local/path/ --progress
-```
-
-> **Note:** The `/pub/.rclone/` endpoint is tagged `noindex, nofollow` so it won't appear in search engines. The human-readable UI at `/pub/` is unaffected.
-
-## Upstream Registration
-
-To be listed as an official mirror for a distribution, you typically need:
-
-1. A public rsync endpoint: `rsync://your.domain/arch` (provided by ezmirror's rsyncd)
-2. Verifiable sync freshness (ezmirror's `status.json` can help)
-3. Contact the distro's mirror admin with your domain, location, and capacity
-
-Each distro has its own mirror submission process — check their documentation.
 
 ## License
 
 GPL-3.0
-
-## Screenshots
-<img width="1861" height="940" alt="image" src="https://github.com/user-attachments/assets/60dd499d-fc61-4300-b606-4802c8f56d8a" />
-<img width="1861" height="940" alt="image" src="https://github.com/user-attachments/assets/09a4ff91-51eb-4c80-8728-2431512fb971" />
-<img width="1861" height="940" alt="image" src="https://github.com/user-attachments/assets/949654c2-e0d9-4409-a4f8-95901a92f4f6" />
-
-
-## Credits 
-
-LLM's *Made with the assistance of Claude Haiku 4.5, Byteforge v1.2 13B*
-
-Developers: NetByte

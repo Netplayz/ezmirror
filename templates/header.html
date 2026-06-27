@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Index of ~PATH~ — __LAB_NAME__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/.templates/style.css">
+<script>
+(function(){var t=localStorage.getItem("ez-theme")||"auto";if(t==="dark")document.documentElement.setAttribute("data-theme","dark");else if(t==="light")document.documentElement.setAttribute("data-theme","light");})();
+</script>
+</head>
+<body>
+<div class="topbar">
+<div class="topbar-inner">
+  <div class="breadcrumb">
+    <a href="/">__DOMAIN__</a><span class="sep">/</span><span>~PATH~</span>
+  </div>
+  <button onclick="(function(){var h=document.documentElement,c=h.getAttribute('data-theme')||'auto',n=c==='dark'?'light':'dark';h.setAttribute('data-theme',n);localStorage.setItem('ez-theme',n);})();" title="Toggle dark/light mode" class="theme-btn">◐</button>
+</div>
+</div>
+<div class="main">
+<div class="page-head">
+  <div>
+    <h1>Index of <span class="path">~PATH~</span></h1>
+    <p>__LAB_NAME__ — __LOCATION__</p>
+  </div>
+  <div class="search-wrap">
+    <input id="search" type="search" placeholder="filter…" autocomplete="off" spellcheck="false">
+  </div>
+</div>
+<div class="file-table-wrap">
+<table id="list">
+<thead><tr>
+  <th class="col-name" onclick="sortTable(0)">Name ↕</th>
+  <th class="col-date" onclick="sortTable(1)">Last Modified ↕</th>
+  <th class="col-size" onclick="sortTable(2)">Size ↕</th>
+</tr></thead>
+<tbody>

@@ -1,6 +1,10 @@
-files.json
-SHA256SUMS
+ezmirord
+*.o
+*.pyc
+__pycache__/
 *.iso
 *.part
 *.log
+files.json
+SHA256SUMS
 .DS_Store
