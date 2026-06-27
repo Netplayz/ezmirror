@@ -1,15 +1,6 @@
 # ezmirror
 
-A self-hostable, production-grade Linux distribution mirror infrastructure with fancyindex templates, a C daemon for metrics/scheduling, and Python/shell management tools.
-
-## Features
-
-- **FancyIndex** — nginx fancyindex module with dark/light themed directory listings
-- **C Daemon** (`ezmirord`) — Prometheus metrics endpoint, health checks, sync scheduling
-- **Python tools** — interactive and unattended setup, mirror management
-- **JSON catalog** — mirror definitions in `mirrors.json`
-- **Production-grade** — metrics, health checks, backup, performance tuning, security hardening
-- **No `/pub/` prefix** — mirrors served directly at `/{slug}/`
+A self-hostable, production-grade Linux distribution mirror infrastructure. Mirrors served at `/{slug}/` via nginx fancyindex. Rust daemon for sync scheduling and Prometheus metrics. Python tools for setup and management.
 
 ## Quick Start
 
@@ -27,79 +18,67 @@ export EZMIRROR_MIRRORS="debian,ubuntu,arch"
 sudo bash setup.sh --unattended
 ```
 
+## Features
+
+- **FancyIndex** — nginx fancyindex module with dark/light themed directory listings, client-side search/sort
+- **Rust Daemon** (`ezmirord`) — Prometheus metrics, health checks, sync scheduling, upstream health checks
+- **Admin Panel** — FastAPI-based web UI at `/admin/` for monitoring and managing mirrors
+- **JSON catalog** — mirror definitions in `mirrors.json`
+- **Docker** — multi-stage build, single-service deployment with docker-compose
+- **No `/pub/` prefix** — mirrors served directly at `/{slug}/`
+
 ## Architecture
 
 ```
 ezmirror/
-  mirrors.json       # Mirror catalog (JSON)
-  setup.sh           # Shell entry point
-  templates/         # FancyIndex header/footer/CSS
-    header.html      #  - prepended to each directory listing
-    footer.html      #  - appended with JS for search/sort
-    style.css        #  - dark/light theme
-  python/
-    setup.py         # Interactive/unattended installer
-    manage.py        # Add/remove mirrors
+  mirrors.json          # Mirror catalog (single source of truth)
+  setup.sh              # Shell entry point for installation
+  Cargo.toml            # Rust project config
   src/
-    main.c           # Daemon entry point
-    config.c         # mirrors.conf parser
-    sync.c           # Sync engine
-    status.c         # Status.json reader/writer
-    metrics.c        # HTTP server: /metrics, /healthz
-  bin/               # Shell wrappers (installed to /usr/local/bin)
+    main.rs             # Daemon entry: CLI, signals, event loop
+    config.rs           # mirrors.conf parser
+    sync.rs             # rsync/rclone execution engine
+    status.rs           # status.json reader/writer
+    metrics.rs          # HTTP server: /metrics, /healthz
+  web/
+    panel.py            # FastAPI admin panel
+  templates/            # Fancyindex header/footer/CSS
+  python/
+    setup.py            # Interactive/unattended installer
+    manage.py           # Mirror selection TUI
 ```
 
 ## Components
 
 | Component | Language | Purpose |
 |-----------|----------|---------|
-| `ezmirord` | C | Daemon: sync scheduling, Prometheus metrics, health endpoint |
+| `ezmirord` | Rust | Daemon: sync scheduling, Prometheus metrics, health endpoint |
+| `web/panel.py` | Python (FastAPI) | Admin panel at `/admin/` |
 | `setup.py` | Python | Installer: dependencies, nginx config, templates |
 | `manage.py` | Python | Interactive mirror selection |
 | shell wrappers | Bash | ezmirror-sync, ezmirror-logs, ezmirror-backup, etc. |
 
-## Production Features
-
-### Monitoring
-- **Prometheus metrics** at `http://127.0.0.1:9633/metrics`
-- **Health endpoint** at `/healthz` (returns 200/503 for load balancers)
-- **status.json** at `/status.json` with per-mirror sync state, disk usage, upstream health
-
-### Backup
-```bash
-sudo ezmirror-backup              # Full config backup to /etc/ezmirror/backups/
-```
-
-### Performance
-- nginx fancyindex (dynamic listings, no per-directory HTML generation)
-- rsync with bandwidth limiting, hardlink support
-- Sendfile, TCP_NOPUSH, TCP_NODELAY enabled
-
-### Security
-- nginx fancyindex hides dotfiles
-- rsyncd host restrictions
-- TLS via Let's Encrypt (auto-detected)
-- Rate limiting ready
-
-### Reliability
-- `flock`-based sync lock prevents overlapping runs
-- Per-mirror sync intervals (1h for Arch, 12h for Debian, etc.)
-- Disk space pre-check before sync
-- Upstream health check before syncing
-- Failure alerts via Discord webhook + email
-
-## Development
+## Commands
 
 ```bash
-# Build C daemon
-make build
-
-# Install to system
-sudo make install
-
-# Full setup
-sudo python3 python/setup.py
+sudo ezmirror-sync               # Sync all mirrors
+sudo ezmirror-sync debian        # Sync specific mirror
+ezmirror-status                   # Show sync status
+ezmirror-logs                     # View sync logs
+ezmirror-logs debian -f           # Follow logs for specific mirror
+sudo ezmirror-manage              # Add/remove mirrors
+sudo ezmirror-update              # Self-update from GitHub
+sudo ezmirror-backup              # Backup configuration
 ```
+
+## Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `https://{domain}/admin/` | Admin panel |
+| `https://{domain}/status.json` | Machine-readable sync status |
+| `https://{domain}/healthz` | Health check |
+| `http://127.0.0.1:9633/metrics` | Prometheus metrics |
 
 ## License
 
