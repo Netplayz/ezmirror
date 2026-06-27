@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build C daemon
-        run: make
+        run: make build
 
       - name: Verify version
         run: |
@@ -28,7 +28,7 @@ jobs:
           cp -r python/ templates/ mirrors.json Makefile VERSION dist/ezmirror/
           cp ezmirord dist/ezmirror/
           cp setup.sh dist/ezmirror/
-          tar -czf dist/ezmiror.tar.gz -C dist ezmirror
+          tar -czf dist/ezmirror.tar.gz -C dist ezmirror
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
