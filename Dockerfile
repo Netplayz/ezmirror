@@ -24,8 +24,10 @@ RUN apt-get update -qq && \
         curl \
         moreutils \
         python3 \
+        python3-pip \
         ca-certificates \
     && \
+    pip3 install -q fastapi uvicorn && \
     rm -rf /var/lib/apt/lists/* && \
     rm -f /etc/nginx/sites-enabled/default
 
@@ -33,6 +35,7 @@ COPY --from=builder /tmp/ezmirord /usr/local/sbin/ezmirord
 COPY mirrors.json /opt/ezmirror/mirrors.json
 COPY templates/ /opt/ezmirror/templates/
 COPY python/ /opt/ezmirror/python/
+COPY web/ /opt/ezmirror/web/
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 RUN chmod +x /usr/local/sbin/ezmirord /usr/local/bin/docker-entrypoint.sh && \

@@ -43,11 +43,17 @@ echo "-> Starting nginx..."
 nginx -g "daemon off;" &
 NGINX_PID=$!
 
+# Start admin panel
+echo "-> Starting admin panel..."
+/opt/ezmirror/web/panel.py &
+PANEL_PID=$!
+
 # Cleanup handler
 cleanup() {
     echo "-> Shutting down..."
     kill "${NGINX_PID}" 2>/dev/null || true
     kill "${EZMIRORD_PID}" 2>/dev/null || true
+    kill "${PANEL_PID}" 2>/dev/null || true
     wait
     exit 0
 }
@@ -58,7 +64,7 @@ echo "-> Starting ezmirord..."
 /usr/local/sbin/ezmirord --foreground &
 EZMIRORD_PID=$!
 
-echo "-> ezmirror running (nginx pid=${NGINX_PID}, ezmirord pid=${EZMIRORD_PID})"
+echo "-> ezmirror running (nginx pid=${NGINX_PID}, ezmirord pid=${EZMIRORD_PID}, panel pid=${PANEL_PID})"
 
 # Wait for any child to exit
 wait -n

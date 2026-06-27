@@ -36,7 +36,7 @@ jobs:
       - name: Package release
         run: |
           mkdir -p dist/ezmirror
-          cp -r python/ templates/ mirrors.json Makefile VERSION dist/ezmirror/
+          cp -r python/ templates/ web/ mirrors.json Makefile VERSION dist/ezmirror/
           cp ezmirord dist/ezmirror/
           cp setup.sh dist/ezmirror/
           cp Dockerfile docker-compose.yml docker-entrypoint.sh dist/ezmirror/

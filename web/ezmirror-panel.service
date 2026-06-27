@@ -1,0 +1,17 @@
+[Unit]
+Description=ezmirror Admin Panel (FastAPI)
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ezmirror-panel
+Restart=always
+RestartSec=5
+User=nobody
+Group=nogroup
+Environment=PYTHONUNBUFFERED=1
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

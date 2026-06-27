@@ -29,6 +29,7 @@ HEALTH_BIN = Path("/usr/local/bin/ezmirror-health")
 BACKUP_BIN = Path("/usr/local/bin/ezmirror-backup")
 METRICS_BIN = Path("/usr/local/bin/ezmirror-metrics")
 DAEMON_BIN = Path("/usr/local/sbin/ezmirord")
+PANEL_BIN = Path("/usr/local/bin/ezmirror-panel")
 LOGFILE = Path("/var/log/ezmirror.log")
 
 R = "\033[0;31m"
@@ -83,6 +84,11 @@ def install_deps():
         info("fancyindex module not found, installing nginx-extras...")
         run(["apt-get", "install", "-y", "-qq", "nginx-extras"], silent=True)
         ok("nginx-extras (fancyindex)")
+
+    # Install Python deps for admin panel
+    info("Installing Python packages (fastapi, uvicorn)...")
+    run(["pip3", "install", "-q", "fastapi", "uvicorn"], silent=True)
+    ok("fastapi + uvicorn")
 
 
 def install_templates(mirror_dir: Path):
@@ -245,6 +251,14 @@ def generate_nginx_config(mirrors: list, lab: dict, mirror_dir: Path,
         alias {WEBROOT}/.templates/;
     }}
 
+    location /admin/ {{
+        proxy_pass http://127.0.0.1:8080/admin/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }}
+
     {locations}
 
     location / {{
@@ -349,6 +363,25 @@ def write_version():
         version = src.read_text().strip()
         (CONF_DIR / "version").write_text(version + "\n")
         ok(f"version {version}")
+
+
+def install_admin_panel():
+    src = EZMIRROR_ROOT / "web" / "panel.py"
+    if not src.exists():
+        warn("web/panel.py not found, skipping admin panel")
+        return False
+    shutil.copy2(src, PANEL_BIN)
+    PANEL_BIN.chmod(0o755)
+    ok(f"ezmirror-panel ({PANEL_BIN})")
+
+    svc = EZMIRROR_ROOT / "web" / "ezmirror-panel.service"
+    if svc.exists() and Path("/run/systemd/system").is_dir():
+        shutil.copy2(svc, Path("/etc/systemd/system/ezmirror-panel.service"))
+        ok("systemd: ezmirror-panel.service")
+        subprocess.run(["systemctl", "daemon-reload"], capture_output=True)
+        subprocess.run(["systemctl", "enable", "--now", "ezmirror-panel.service"], capture_output=True)
+        ok("ezmirror-panel.service enabled")
+    return True
 
 
 def install_scripts():
@@ -628,7 +661,11 @@ def main():
             subprocess.run(["systemctl", "enable", "--now", "ezmirord.service"], capture_output=True)
             ok("ezmirord.service started")
 
-    # 13. Logrotate
+    # 13. Install admin panel
+    if built:
+        install_admin_panel()
+
+    # 14. Logrotate
     logrotate = f"""/var/log/ezmirror.log {{
     daily
     rotate 30
@@ -644,10 +681,10 @@ def main():
     (Path("/etc/logrotate.d/ezmirror")).write_text(logrotate)
     ok("logrotate")
 
-    # 14. Cleanup old pub
+    # 15. Cleanup old pub
     cleanup_old_pub()
 
-    # 15. Initial sync?
+    # 16. Initial sync?
     if unattended and os.environ.get("EZMIRROR_SKIP_INITIAL_SYNC"):
         warn("Skipped initial sync (EZMIRROR_SKIP_INITIAL_SYNC)")
     elif unattended or input(f"\n  Run initial sync now? [y/N]: ").lower() == "y":
@@ -657,9 +694,10 @@ def main():
     else:
         warn("Skipped initial sync")
 
-    # 16. Summary
+    # 17. Summary
     print(f"\n{G}{B}ezmirror setup complete.{N}")
     print(f"\n  Site:           https://{lab['DOMAIN']}")
+    print(f"  Admin Panel:    https://{lab['DOMAIN']}/admin/")
     print(f"  Status JSON:    https://{lab['DOMAIN']}/status.json")
     print(f"  Metrics:        http://127.0.0.1:9633/metrics")
     print(f"  Health:         http://127.0.0.1:9633/healthz")
