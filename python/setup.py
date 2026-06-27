@@ -340,9 +340,19 @@ def build_daemon():
     return True
 
 
+def write_version():
+    src = EZMIRROR_ROOT / "VERSION"
+    if src.exists():
+        version = src.read_text().strip()
+        (CONF_DIR / "version").write_text(version + "\n")
+        ok(f"version {version}")
+
+
 def install_scripts():
     scripts_py = {
         "ezmirror-manage": EZMIRROR_ROOT / "python" / "manage.py",
+        "ezmirror-update": EZMIRROR_ROOT / "python" / "update.py",
+        "ezmirror-rollback": EZMIRROR_ROOT / "python" / "rollback.py",
     }
     for name, src in scripts_py.items():
         dst = Path("/usr/local/bin") / name
@@ -560,7 +570,10 @@ def main():
     if webhook or email:
         write_alert_conf(webhook, email)
 
-    # 7. Generate status.json
+    # 7. Version tracking
+    write_version()
+
+    # 8. Generate status.json
     status_file = WEBROOT / "status.json"
     status_file.write_text('{"generated":0,"mirrors":{}}')
     ok("status.json")
@@ -645,6 +658,8 @@ def main():
     print(f"  Health:         ezmirror-health")
     print(f"  Backup:         sudo ezmirror-backup")
     print(f"  Manage:         sudo ezmirror-manage")
+    print(f"  Update:         sudo ezmirror-update")
+    print(f"  Rollback:       sudo ezmirror-rollback /etc/ezmirror/backups/*.tar.gz")
     print()
 
 
