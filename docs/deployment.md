@@ -106,7 +106,7 @@ services:
     environment:
       EZMIRROR_LAB_NAME: "My Docker Mirror"
       EZMIRROR_DOMAIN: "mirror.example.com"
-      EZMIRROR_LOCATION: "Docker, US"
+      EZMIRROR_LOCATION: "Philadelphia, PA, US"
       EZMIRROR_ADMIN_USER: "admin"
       EZMIRROR_ADMIN_PASS: "securepassword123"
       EZMIRROR_MIRRORS: ""
