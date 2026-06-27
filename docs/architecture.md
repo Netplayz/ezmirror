@@ -2,25 +2,23 @@
 
 ## Overview
 
-ezmirror is structured as three main services: a Rust daemon for sync/monitoring, a Python admin panel, and nginx for serving mirror content. All three are behind a single nginx instance.
+ezmirror is structured as three main services: a Rust daemon for sync/monitoring, a Python admin panel, and nginx for serving mirror content. All three sit behind a single nginx instance.
 
-```mermaid
-graph TD
-    User-->|"https://{domain}/{slug}/"|Nginx
-    User-->|"https://{domain}/admin/"|Nginx
-    Nginx-->|"proxy :8080"|Admin[Admin Panel<br/>web/panel.py]
-    Nginx-->|"proxy :9633/healthz"|Daemon
-    Admin-->|"POST /api/sync"|Daemon
-    Admin-->|"reads"|Status[status.json]
-    Daemon-->|"writes"|Status
-    Daemon-->|"rsync"|Upstream[Upstream Mirrors]
-    Daemon-->|":9633/metrics"|Prometheus
-    Nginx-->|"fancyindex"|MirrorData[Mirror Data<br/>/var/www/html/{slug}/]
+```
+User ──https──▶ nginx ──proxy:9633──▶ Daemon (ezmirord)
+                │                       │
+                ├──fancyindex──▶ /debian/  ◀── rsync sync ──▶ Upstream
+                ├──fancyindex──▶ /ubuntu/  │
+                ├────proxy────▶ /admin/ ──▶ Admin Panel (FastAPI :8080)
+                └───no-cache──▶ /status.json
+                                        ▲
+                                   Daemon writes
 ```
 
 ## Layer 1: nginx
 
 - Serves mirror content via fancyindex at `/{slug}/`
+- Enforces HTTP Basic Auth at `/admin/` via `/etc/ezmirror/.htpasswd`
 - Proxies `/admin/` to the admin panel (`127.0.0.1:8080`)
 - Proxies `/healthz` to the daemon (`127.0.0.1:9633/healthz`)
 - Serves `status.json` with no-cache headers
@@ -33,6 +31,7 @@ graph TD
 | Flag | Description |
 |------|-------------|
 | `--daemon` | Fork into background (double-fork daemonization) |
+| `--foreground` | Run in foreground with sync loop and metrics server |
 | `--sync` | Run sync once and exit |
 | `--sync-slug <SLUG>` | Sync a specific mirror only |
 | `--dry-run` | Print rsync commands without executing |
@@ -58,6 +57,7 @@ FastAPI server running on `127.0.0.1:8080`.
 
 - Serves single-page admin UI
 - REST API for monitoring and managing mirrors
+- Creates/deletes mirrors (writes configs, manages nginx locations)
 - Reads `status.json` for sync status
 - Triggers syncs by spawning `ezmirord --sync`
 - Reads config files from `/etc/ezmirror/`
@@ -79,6 +79,7 @@ FastAPI server running on `127.0.0.1:8080`.
   lab.conf                     # Lab branding
   paths.conf                   # Path configuration
   alert.conf                   # Alert webhook/email
+  .htpasswd                    # Admin panel HTTP auth credentials
   version                      # Installed version
 
 /var/log/ezmirror.log          # Sync + daemon logs

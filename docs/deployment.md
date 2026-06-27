@@ -21,11 +21,12 @@ sudo bash setup.sh
 The installer will:
 1. Prompt for lab name, domain, location
 2. Let you select which mirrors to sync
-3. Install dependencies (nginx, rsync, etc.)
-4. Build the Rust daemon
-5. Configure nginx with fancyindex
-6. Create systemd services
-7. Optionally run initial sync
+3. Prompt for admin panel username/password
+4. Install dependencies (nginx, rsync, apache2-utils, etc.)
+5. Build the Rust daemon
+6. Configure nginx with fancyindex
+7. Create systemd services
+8. Optionally run initial sync
 
 ### Unattended Install
 
@@ -33,7 +34,9 @@ The installer will:
 export EZMIRROR_LAB_NAME="My Open Source Lab"
 export EZMIRROR_DOMAIN="mirror.example.com"
 export EZMIRROR_LOCATION="Anytown, US"
-export EZMIRROR_MIRRORS="debian,ubuntu,arch"  # comma-separated slugs
+export EZMIRROR_MIRRORS="debian,ubuntu,arch"
+export EZMIRROR_ADMIN_USER="admin"
+export EZMIRROR_ADMIN_PASS="securepassword123"
 
 sudo bash setup.sh --unattended
 ```
@@ -49,8 +52,10 @@ sudo bash setup.sh --unattended
 | `EZMIRROR_LOGO_URL` | `""` | Logo image URL |
 | `EZMIRROR_MIRRORS` | all mirrors | Comma-separated slugs |
 | `EZMIRROR_VOLUME` | `"/var/www/html"` | Mirror data path |
-| `EZMIRROR_WEBHOOK` | `""` | Discord/ Slack webhook URL |
+| `EZMIRROR_WEBHOOK` | `""` | Discord/Slack webhook URL |
 | `EZMIRROR_EMAIL` | `""` | Alert email address |
+| `EZMIRROR_ADMIN_USER` | `"admin"` | Admin panel username |
+| `EZMIRROR_ADMIN_PASS` | (prompt) | Admin panel password (min 8 chars) |
 | `EZMIRROR_SKIP_DEPS` | `""` | Set `"1"` to skip apt install |
 | `EZMIRROR_SKIP_INITIAL_SYNC` | `""` | Set `"1"` to skip initial sync |
 
@@ -76,6 +81,9 @@ systemctl status ezmirror-sync.timer
 journalctl -u ezmirord -f
 tail -f /var/log/ezmirror.log
 
+# Admin panel
+curl -u admin:password http://localhost/admin/
+
 # Verify nginx
 curl -sI http://localhost/debian/
 curl -s http://localhost/status.json
@@ -99,6 +107,8 @@ services:
       EZMIRROR_LAB_NAME: "My Docker Mirror"
       EZMIRROR_DOMAIN: "mirror.example.com"
       EZMIRROR_LOCATION: "Docker, US"
+      EZMIRROR_ADMIN_USER: "admin"
+      EZMIRROR_ADMIN_PASS: "securepassword123"
       EZMIRROR_MIRRORS: ""
     volumes:
       - ezmirror_data:/var/www/html
@@ -106,11 +116,7 @@ services:
 
 ### Docker Environment Variables
 
-Same as standard install, plus:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `EZMIRROR_VOLUME` | `"/var/www/html"` | Volume mount path |
+Same as standard install.
 
 ### Persistent Data
 

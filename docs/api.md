@@ -4,7 +4,7 @@ The admin panel runs at `127.0.0.1:8080` and is proxied by nginx at `/admin/`.
 
 ## Authentication
 
-Currently **no authentication** is built in. The panel binds to `127.0.0.1` and relies on nginx for access control. Add basic auth or IP restrictions in the nginx `/admin/` location block as needed.
+HTTP Basic Auth is enforced by nginx at the `/admin/` location. Credentials are stored in `/etc/ezmirror/.htpasswd`. Set `EZMIRROR_ADMIN_USER` and `EZMIRROR_ADMIN_PASS` environment variables during unattended install, or the installer will prompt for credentials.
 
 ## Endpoints
 
@@ -50,6 +50,59 @@ GET /admin/api/mirrors/{slug}
 ```
 
 **Response:** Same fields as list, plus `upstream_response_time_ms`, `upstream_health_checked`.
+
+### Create Mirror
+
+```
+POST /admin/api/mirrors
+Content-Type: application/json
+```
+
+Creates a new mirror: writes to `mirrors.json`, `mirrors.conf`, creates the mirror directory, inserts the nginx location block, and reloads nginx.
+
+**Request body (all fields optional except `slug`):**
+```json
+{
+  "slug": "my-distro",
+  "name": "My Distro Linux",
+  "description": "A great distribution",
+  "upstream": "rsync://rsync.example.com/my-distro/",
+  "method": "rsync",
+  "size": "~500 GiB",
+  "warn": "large",
+  "interval": "6h",
+  "bandwidth": 0,
+  "retention_days": 0,
+  "retention_max_gib": 0
+}
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "slug": "my-distro",
+  "reload": { "ok": true, "error": "" },
+  "mirror": { ... }
+}
+```
+
+### Delete Mirror
+
+```
+DELETE /admin/api/mirrors/{slug}
+```
+
+Removes the mirror from config files and nginx. Mirror data on disk is preserved.
+
+**Response:**
+```json
+{
+  "ok": true,
+  "slug": "my-distro",
+  "reload": { "ok": true, "error": "" }
+}
+```
 
 ### Trigger Sync
 
@@ -140,6 +193,7 @@ The admin UI is a single-page application embedded directly in `web/panel.py` as
 - Card grid of mirrors with status badges
 - Search/filter by slug, name, or upstream
 - Auto-refresh every 30 seconds
-- Detail view with raw JSON
+- Create mirror form (modal dialog)
+- Detail view with raw JSON and Delete button
 - Log viewer showing tail of `/var/log/ezmirror.log`
 - Hash-based routing (`#mirror-{slug}`)
