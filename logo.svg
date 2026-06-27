@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" rx="80" fill="#0f1117"/>
+
+  <!-- Outer ring -->
+  <circle cx="200" cy="200" r="130" stroke="#4f8cff" stroke-width="6" fill="none"/>
+  <circle cx="200" cy="200" r="110" stroke="#4f8cff" stroke-width="2" stroke-dasharray="8 6" fill="none" opacity=".4"/>
+
+  <!-- Globe lines -->
+  <ellipse cx="200" cy="200" rx="130" ry="50" stroke="#2a2d3a" stroke-width="2" fill="none"/>
+  <ellipse cx="200" cy="200" rx="50" ry="130" stroke="#2a2d3a" stroke-width="2" fill="none"/>
+
+  <!-- Mirror disc -->
+  <circle cx="200" cy="200" r="80" fill="#1a1d27" stroke="#4f8cff" stroke-width="3"/>
+  <circle cx="200" cy="200" r="68" fill="#13161f"/>
+
+  <!-- Data packets -->
+  <circle cx="160" cy="170" r="8" fill="#3fb950" opacity=".9"/>
+  <circle cx="240" cy="170" r="8" fill="#3fb950" opacity=".9"/>
+  <circle cx="200" cy="140" r="8" fill="#3fb950" opacity=".9"/>
+  <circle cx="170" cy="240" r="8" fill="#d29922" opacity=".9"/>
+  <circle cx="230" cy="240" r="8" fill="#d29922" opacity=".9"/>
+  <circle cx="200" cy="210" r="8" fill="#4f8cff" opacity=".9"/>
+  <circle cx="170" cy="200" r="8" fill="#4f8cff" opacity=".9"/>
+  <circle cx="230" cy="200" r="8" fill="#4f8cff" opacity=".9"/>
+
+  <!-- Connection lines (data flow) -->
+  <line x1="168" y1="178" x2="192" y2="202" stroke="#3fb950" stroke-width="2" opacity=".6"/>
+  <line x1="232" y1="178" x2="208" y2="202" stroke="#3fb950" stroke-width="2" opacity=".6"/>
+  <line x1="192" y1="148" x2="200" y2="132" stroke="#3fb950" stroke-width="2" opacity=".6"/>
+  <line x1="208" y1="148" x2="200" y2="132" stroke="#3fb950" stroke-width="2" opacity=".6"/>
+  <line x1="230" y1="232" x2="208" y2="208" stroke="#d29922" stroke-width="2" opacity=".6"/>
+  <line x1="170" y1="232" x2="192" y2="208" stroke="#d29922" stroke-width="2" opacity=".6"/>
+
+  <!-- Center node -->
+  <circle cx="200" cy="200" r="16" fill="#4f8cff"/>
+  <circle cx="200" cy="200" r="8" fill="#0f1117"/>
+
+  <!-- Sync arrows around ring -->
+  <path d="M 200 70 L 210 82 L 200 80" stroke="#3fb950" stroke-width="2" fill="none"/>
+  <path d="M 200 330 L 190 318 L 200 320" stroke="#d29922" stroke-width="2" fill="none"/>
+  <path d="M 70 200 L 82 190 L 80 200" stroke="#4f8cff" stroke-width="2" fill="none"/>
+  <path d="M 330 200 L 318 210 L 320 200" stroke="#4f8cff" stroke-width="2" fill="none"/>
+
+  <!-- Sync pulse dots -->
+  <circle cx="200" cy="76" r="3" fill="#3fb950"/>
+  <circle cx="200" cy="324" r="3" fill="#d29922"/>
+  <circle cx="76" cy="200" r="3" fill="#4f8cff"/>
+  <circle cx="324" cy="200" r="3" fill="#4f8cff"/>
+
+  <!-- Label -->
+  <text x="200" y="380" text-anchor="middle" font-family="'Inter','SF Pro',-apple-system,sans-serif" font-size="20" font-weight="600" fill="#e1e4ec" letter-spacing="2">ezmirror</text>
+</svg>

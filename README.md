@@ -1,6 +1,6 @@
 # ezmirror
 <p align="center">
-<img width="500" height="500" alt="ezmirror" src="https://github.com/user-attachments/assets/816e7b15-6cc2-464a-a13c-c49643172774" />
+<img width="200" alt="ezmirror" src="logo.svg" />
 </p>
 
 Self-hostable Linux distribution mirror infrastructure. Mirrors served at `/{slug}/` via nginx fancyindex. Rust daemon for sync scheduling and Prometheus metrics. Python admin panel for management.
