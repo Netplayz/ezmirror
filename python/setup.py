@@ -72,7 +72,7 @@ def install_deps():
         return
     info("Installing dependencies...")
     pkgs = ["nginx", "rsync", "jq", "curl", "git", "moreutils", "build-essential",
-            "libpcre3-dev", "libssl-dev", "zlib1g-dev"]
+            "libpcre3-dev", "libssl-dev", "zlib1g-dev", "apache2-utils"]
     run(["apt-get", "update", "-qq"], silent=True)
     for pkg in pkgs:
         run(["apt-get", "install", "-y", "-qq", pkg], silent=True)
@@ -252,6 +252,8 @@ def generate_nginx_config(mirrors: list, lab: dict, mirror_dir: Path,
     }}
 
     location /admin/ {{
+        auth_basic "ezmirror Admin Panel";
+        auth_basic_user_file /etc/ezmirror/.htpasswd;
         proxy_pass http://127.0.0.1:8080/admin/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -382,6 +384,42 @@ def install_admin_panel():
         subprocess.run(["systemctl", "enable", "--now", "ezmirror-panel.service"], capture_output=True)
         ok("ezmirror-panel.service enabled")
     return True
+
+
+def setup_admin_auth(unattended: bool):
+    htpasswd = CONF_DIR / ".htpasswd"
+    user = os.environ.get("EZMIRROR_ADMIN_USER", "")
+    passwd = os.environ.get("EZMIRROR_ADMIN_PASS", "")
+
+    if user and passwd:
+        run(["htpasswd", "-cb", str(htpasswd), user, passwd], silent=True)
+        ok(f"admin auth: {user}")
+        return
+
+    if htpasswd.exists():
+        info("admin auth: .htpasswd already exists")
+        return
+
+    if unattended:
+        info("admin auth: skipped (no EZMIRROR_ADMIN_USER/PASS)")
+        return
+
+    print()
+    user = input("  Admin username [admin]: ").strip() or "admin"
+    import getpass
+    while True:
+        passwd = getpass.getpass("  Admin password: ")
+        if len(passwd) < 8:
+            warn("Password must be at least 8 characters")
+            continue
+        confirm = getpass.getpass("  Confirm password: ")
+        if passwd != confirm:
+            warn("Passwords do not match")
+            continue
+        break
+    run(["htpasswd", "-cb", str(htpasswd), user, passwd], silent=True)
+    ok(f"admin auth: {user}")
+    htpasswd.chmod(0o600)
 
 
 def install_scripts():
@@ -664,6 +702,7 @@ def main():
     # 13. Install admin panel
     if built:
         install_admin_panel()
+        setup_admin_auth(unattended)
 
     # 14. Logrotate
     logrotate = f"""/var/log/ezmirror.log {{

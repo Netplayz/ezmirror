@@ -33,6 +33,8 @@ hdr() {
 [[ -n "${EZMIRROR_WEBHOOK:-}"   ]] && export EZMIRROR_WEBHOOK
 [[ -n "${EZMIRROR_EMAIL:-}"     ]] && export EZMIRROR_EMAIL
 [[ -n "${EZMIRROR_LOGO_URL:-}"  ]] && export EZMIRROR_LOGO_URL
+[[ -n "${EZMIRROR_ADMIN_USER:-}" ]] && export EZMIRROR_ADMIN_USER
+[[ -n "${EZMIRROR_ADMIN_PASS:-}" ]] && export EZMIRROR_ADMIN_PASS
 
 echo -e "\n${B}ezmirror — Production Mirror Infrastructure${N}"
 echo    "  https://github.com/netplayz/ezmirror"
