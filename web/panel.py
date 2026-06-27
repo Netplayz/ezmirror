@@ -17,6 +17,7 @@ try:
     from fastapi import FastAPI, HTTPException
     from fastapi.responses import HTMLResponse, JSONResponse
     from fastapi.staticfiles import StaticFiles
+    from pydantic import BaseModel
     import uvicorn
 except ImportError:
     print("Required: pip install fastapi uvicorn")
@@ -30,6 +31,22 @@ MIRRORS_JSON = Path("/opt/ezmirror/mirrors.json")
 CONF_DIR = Path("/etc/ezmirror")
 DAEMON_BIN = "/usr/local/sbin/ezmirord"
 LOG_FILE = Path("/var/log/ezmirror.log")
+NGINX_CONF = "/etc/nginx/sites-available/default"
+MIRROR_DIR = Path("/var/www/html")
+
+
+class MirrorCreate(BaseModel):
+    slug: str
+    name: str = ""
+    description: str = ""
+    upstream: str = ""
+    method: str = "rsync"
+    size: str = ""
+    warn: str = ""
+    interval: str = "6h"
+    bandwidth: int = 0
+    retention_days: int = 0
+    retention_max_gib: int = 0
 
 
 def read_mirrors_conf() -> list[dict]:
@@ -95,6 +112,85 @@ def run_sync(slug: Optional[str] = None) -> dict:
         return {"exit_code": -1, "stdout": "", "stderr": "ezmirord not found"}
 
 
+def mirror_to_conf_line(m: dict) -> str:
+    return (f"{m['slug']}|{m.get('name','')}|{m.get('description','')}|"
+            f"{m.get('upstream','')}|{m.get('method','rsync')}|{m.get('size','')}|"
+            f"{m.get('warn','')}|{m.get('interval','6h')}|"
+            f"{m.get('bandwidth',0)}|{m.get('retention_days',0)}|{m.get('retention_max_gib',0)}\n")
+
+
+def write_mirrors_json(mirrors: list):
+    with open(MIRRORS_JSON, "w") as f:
+        json.dump(mirrors, f, indent=2)
+        f.write("\n")
+
+
+def add_mirror_to_conf(m: dict):
+    with open(MIRRORS_CONF, "a") as f:
+        f.write(mirror_to_conf_line(m))
+
+
+def remove_mirror_from_conf(slug: str):
+    if not MIRRORS_CONF.exists():
+        return
+    lines = MIRRORS_CONF.read_text().splitlines(keepends=True)
+    with open(MIRRORS_CONF, "w") as f:
+        for line in lines:
+            if not line.startswith(slug + "|"):
+                f.write(line)
+
+
+def reload_nginx() -> dict:
+    result = subprocess.run(["nginx", "-t"], capture_output=True, text=True)
+    if result.returncode != 0:
+        return {"ok": False, "error": result.stderr.strip()}
+    subprocess.run(["systemctl", "reload", "nginx"], capture_output=True)
+    return {"ok": True, "error": ""}
+
+
+def add_nginx_location(slug: str):
+    fancyindex_block = '''    fancyindex on;
+    fancyindex_header "/.templates/header.html";
+    fancyindex_footer "/.templates/footer.html";
+    fancyindex_css_href "/.templates/style.css";
+    fancyindex_show_path on;
+    fancyindex_show_dotfiles off;
+    fancyindex_default_sort name;
+    fancyindex_name_length 255;
+    fancyindex_time_format "%Y-%m-%d %H:%M";
+'''
+    new_location = f'''
+    location /{slug}/ {{
+        alias {MIRROR_DIR}/{slug}/;
+{fancyindex_block}    }}
+'''
+    if not Path(NGINX_CONF).exists():
+        return {"ok": False, "error": "nginx config not found"}
+    content = Path(NGINX_CONF).read_text()
+    marker = "\n    location / {"
+    idx = content.find(marker)
+    if idx == -1:
+        return {"ok": False, "error": "could not find location / block in nginx config"}
+    content = content[:idx] + new_location + content[idx:]
+    Path(NGINX_CONF).write_text(content)
+    return {"ok": True, "error": ""}
+
+
+def remove_nginx_location(slug: str):
+    if not Path(NGINX_CONF).exists():
+        return {"ok": False, "error": "nginx config not found"}
+    content = Path(NGINX_CONF).read_text()
+    start = content.find(f"\n    location /{slug}/ {{")
+    if start == -1:
+        return {"ok": False, "error": "location block not found"}
+    end = content.find("\n    }", start)
+    if end == -1:
+        return {"ok": False, "error": "could not find end of location block"}
+    content = content[:start] + content[end+6:]
+    Path(NGINX_CONF).write_text(content)
+    return {"ok": True, "error": ""}
+
+
 # --- API Routes ---
 
 @app.get("/admin/api/mirrors")
@@ -144,6 +240,45 @@ def api_mirror_detail(slug: str):
         "upstream_response_time_ms": st.get("upstream_response_time_ms", 0),
         "upstream_health_checked": st.get("upstream_health_checked", 0),
     }
+
+
+@app.post("/admin/api/mirrors")
+def api_create_mirror(m: MirrorCreate):
+    slug = m.slug.strip().lower().replace(" ", "-")
+    if not slug:
+        raise HTTPException(400, "slug is required")
+    mirrors = read_mirrors_conf()
+    if any(x["slug"] == slug for x in mirrors):
+        raise HTTPException(409, f"Mirror '{slug}' already exists")
+
+    d = m.model_dump()
+    d["slug"] = slug
+    d.setdefault("method", "rsync")
+    d.setdefault("interval", "6h")
+
+    mirrors.append(d)
+    write_mirrors_json(mirrors)
+    add_mirror_to_conf(d)
+    (MIRROR_DIR / slug).mkdir(parents=True, exist_ok=True)
+    add_nginx_location(slug)
+    rl = reload_nginx()
+
+    return {"ok": True, "slug": slug, "reload": rl, "mirror": d}
+
+
+@app.delete("/admin/api/mirrors/{slug}")
+def api_delete_mirror(slug: str):
+    mirrors = read_mirrors_conf()
+    if not any(m["slug"] == slug for m in mirrors):
+        raise HTTPException(404, "Mirror not found")
+
+    mirrors = [m for m in mirrors if m["slug"] != slug]
+    write_mirrors_json(mirrors)
+    remove_mirror_from_conf(slug)
+    remove_nginx_location(slug)
+    rl = reload_nginx()
+
+    return {"ok": True, "slug": slug, "reload": rl}
 
 
 @app.post("/admin/api/sync/{slug}")
@@ -294,6 +429,7 @@ pre.raw-json{background:var(--bg);border:1px solid var(--border);border-radius:6
     <div style="display:flex;gap:6px">
       <span style="font-size:12px;color:var(--muted)" id="last-refresh"></span>
       <button class="btn" onclick="refresh()">Refresh</button>
+      <button class="btn btn-primary" onclick="showCreate()">+ Mirror</button>
       <button class="btn btn-primary btn-sm" onclick="syncAll()">Sync All</button>
     </div>
   </div>
@@ -302,6 +438,82 @@ pre.raw-json{background:var(--bg);border:1px solid var(--border);border-radius:6
     <div class="loading">Loading mirrors...</div>
   </div>
 </div>
+
+<div id="create-modal" class="modal hidden">
+  <div class="modal-backdrop" onclick="hideCreate()"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Create Mirror</h2>
+      <button class="btn" onclick="hideCreate()">&times;</button>
+    </div>
+    <div class="modal-body" id="create-form">
+      <div class="form-row">
+        <label>Slug</label>
+        <input class="form-input" id="f-slug" placeholder="debian" oninput="document.getElementById('f-slug-display').textContent = '/' + this.value.toLowerCase().replace(/ /g,'-') + '/'">
+        <span class="form-hint" id="f-slug-display">/debian/</span>
+      </div>
+      <div class="form-row">
+        <label>Name</label>
+        <input class="form-input" id="f-name" placeholder="Debian GNU/Linux">
+      </div>
+      <div class="form-row">
+        <label>Description</label>
+        <input class="form-input" id="f-desc" placeholder="Stable, testing, and unstable">
+      </div>
+      <div class="form-row">
+        <label>Upstream</label>
+        <input class="form-input" id="f-upstream" placeholder="rsync://rsync.debian.org/debian/">
+      </div>
+      <div class="form-row">
+        <label>Method</label>
+        <select class="form-input" id="f-method"><option value="rsync">rsync</option><option value="rclone">rclone</option></select>
+      </div>
+      <div class="form-row">
+        <label>Interval</label>
+        <input class="form-input" id="f-interval" placeholder="6h" value="6h">
+      </div>
+      <div class="form-row">
+        <label>Size</label>
+        <input class="form-input" id="f-size" placeholder="~2.0 TiB">
+      </div>
+      <div class="form-row">
+        <label>Bandwidth (KB/s)</label>
+        <input class="form-input" id="f-bandwidth" type="number" placeholder="0" value="0">
+      </div>
+      <div class="form-row">
+        <label>Retention Days</label>
+        <input class="form-input" id="f-retention-days" type="number" placeholder="0" value="0">
+      </div>
+      <div class="form-row">
+        <label>Max GiB</label>
+        <input class="form-input" id="f-retention-gib" type="number" placeholder="0" value="0">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span id="create-error" style="color:var(--red);font-size:12px"></span>
+      <button class="btn" onclick="hideCreate()">Cancel</button>
+      <button class="btn btn-primary" id="create-btn" onclick="createMirror()">Create</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:1000}
+.modal.hidden{display:none}
+.modal-backdrop{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6)}
+.modal-content{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:8px;width:480px;max-height:80vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-header h2{font-size:15px;font-weight:600}
+.modal-body{padding:16px 20px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border)}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.form-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;color:var(--text);font-family:var(--mono);font-size:13px}
+.form-input:focus{outline:none;border-color:var(--accent)}
+.form-input[type=number]{width:120px}
+.form-hint{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:2px;display:block}
+select.form-input{appearance:none;cursor:pointer}
+</style>
 
 <script>
 let data = { mirrors: [], generated: 0 };
@@ -477,6 +689,7 @@ function showDetail(slug) {
           '<div class="info-row"><span class="info-label">Last Sync</span><span>' + ago(detail.last_sync_ago) + '</span></div>' +
           '<div class="card-actions" style="margin-top:16px">' +
             '<button class="btn btn-sm btn-primary" onclick="syncOne(\'' + slug + '\');refresh()">Sync Now</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="deleteMirror(\'' + slug + '\')">Delete</button>' +
           '</div>' +
         '</div>' +
         '<div>' +
@@ -486,6 +699,67 @@ function showDetail(slug) {
       '</div>';
   }).catch(e => {
     app.innerHTML = '<div class="loading" style="color:var(--red)">Failed: ' + e.message + '</div>';
+  });
+}
+
+function showCreate() {
+  document.getElementById('create-modal').classList.remove('hidden');
+  document.getElementById('create-error').textContent = '';
+  document.getElementById('create-btn').disabled = false;
+  document.getElementById('create-btn').textContent = 'Create';
+}
+
+function hideCreate() {
+  document.getElementById('create-modal').classList.add('hidden');
+}
+
+async function createMirror() {
+  const btn = document.getElementById('create-btn');
+  const err = document.getElementById('create-error');
+  err.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+
+  const body = {
+    slug: document.getElementById('f-slug').value,
+    name: document.getElementById('f-name').value,
+    description: document.getElementById('f-desc').value,
+    upstream: document.getElementById('f-upstream').value,
+    method: document.getElementById('f-method').value,
+    interval: document.getElementById('f-interval').value,
+    size: document.getElementById('f-size').value,
+    bandwidth: parseInt(document.getElementById('f-bandwidth').value) || 0,
+    retention_days: parseInt(document.getElementById('f-retention-days').value) || 0,
+    retention_max_gib: parseInt(document.getElementById('f-retention-gib').value) || 0,
+  };
+
+  try {
+    const res = await fetch('/admin/api/mirrors', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      err.textContent = data.detail || 'Failed to create mirror';
+      btn.disabled = false;
+      btn.textContent = 'Create';
+      return;
+    }
+    hideCreate();
+    refresh();
+  } catch(e) {
+    err.textContent = e.message;
+    btn.disabled = false;
+    btn.textContent = 'Create';
+  }
+}
+
+function deleteMirror(slug) {
+  if (!confirm('Delete mirror "' + slug + '"? This will remove the nginx location but keep data on disk.')) return;
+  fetch('/admin/api/mirrors/' + slug, { method: 'DELETE' }).then(r => r.json()).then(d => {
+    if (d.ok) { window.location.hash = ''; refresh(); }
+    else alert('Delete failed');
   });
 }
 
