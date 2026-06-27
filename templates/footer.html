@@ -1,0 +1,38 @@
+</tbody>
+</table>
+</div>
+<footer>
+  <span>__LAB_NAME__ — powered by <a href="https://github.com/netplayz/ezmirror" target="_blank" rel="noopener">ezmirror</a></span>
+  <span><a href="/">← Home</a></span>
+</footer>
+</div>
+<script>
+var rows = [];
+function fmtBytes(b){if(!b||b==='—')return'—';var u=['B','KiB','MiB','GiB','TiB'];var i=0,n=parseFloat(b);while(n>=1024&&i<4){n/=1024;i++;}return n.toFixed(i?1:0)+'\u202f'+u[i];}
+function fmtTime(t){if(!t||t==='—')return'—';var d=new Date(t);if(isNaN(d))return t;return d.toISOString().slice(0,16).replace('T',' ');}
+document.querySelectorAll('#list tbody tr').forEach(function(tr){
+  if(tr.querySelector('td')){rows.push(tr);var n=tr.querySelector('td.col-name');if(n)tr.dataset.name=n.textContent.trim().toLowerCase();var d=tr.querySelector('td.col-date');if(d)tr.dataset.mtime=d.textContent.trim();var s=tr.querySelector('td.col-size');if(s)tr.dataset.size=s.textContent.trim();}
+  var ico=tr.querySelector('.ico');
+  if(ico){var nm=tr.querySelector('a');if(nm&&nm.textContent.trim().endsWith('/')){ico.textContent='📁';}else if(nm&&nm.textContent.trim().endsWith('.iso')){ico.textContent='💿';}else{ico.textContent='📄';}}
+  tr.querySelectorAll('td.col-size').forEach(function(td){var t=td.textContent.trim();if(t&&t!=='—'&&t!=='-'){var num=parseFloat(t);if(!isNaN(num))td.textContent=fmtBytes(num);}});
+  tr.querySelectorAll('td.col-date').forEach(function(td){var t=td.textContent.trim();td.textContent=fmtTime(t);});
+});
+document.getElementById('search').addEventListener('input',function(){
+  var q=this.value.toLowerCase().trim();
+  rows.forEach(function(r){r.classList.toggle('hidden',!!q&&!r.dataset.name.includes(q));});
+});
+var sortDir={};
+function sortTable(col){
+  var keys=['name','mtime','size'];var k=keys[col];
+  sortDir[k]=!sortDir[k];var s=sortDir[k]?1:-1;
+  var tbody=document.querySelector('#list tbody');
+  rows.sort(function(a,b){
+    var av=a.dataset[k]||'',bv=b.dataset[k]||'';
+    if(col>0){av=parseFloat(av)||0;bv=parseFloat(bv)||0;return(av<bv?-1:av>bv?1:0)*s;}
+    return av.localeCompare(bv)*s;
+  });
+  rows.forEach(function(r){tbody.appendChild(r);});
+}
+</script>
+</body>
+</html>
