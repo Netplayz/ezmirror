@@ -18,7 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build C daemon
+      - name: Install Rust toolchain
+        run: rustup show || true
+
+      - name: Build daemon
         run: make build
 
       - name: Verify version

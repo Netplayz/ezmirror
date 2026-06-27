@@ -1,6 +1,3 @@
-CC = gcc
-CFLAGS = -O2 -Wall -Wextra -pthread
-SRC = src/main.c src/config.c src/sync.c src/status.c src/metrics.c
 BIN = ezmirord
 PREFIX = /usr/local
 
@@ -8,11 +5,12 @@ PREFIX = /usr/local
 
 all: build
 
-build: $(SRC)
-	$(CC) $(CFLAGS) -o $(BIN) $(SRC)
+build:
+	cargo build --release
+	cp target/release/$(BIN) $(BIN)
 
 install: build
-	install -m 755 $(BIN) $(PREFIX)/sbin/ezmirord
+	install -m 755 $(BIN) $(PREFIX)/sbin/$(BIN)
 	install -m 755 python/setup.py $(PREFIX)/bin/ezmirror-setup
 	install -m 755 python/manage.py $(PREFIX)/bin/ezmirror-manage-py
 	cp templates/* /var/www/html/.templates/ 2>/dev/null || true
@@ -26,3 +24,4 @@ setup:
 
 clean:
 	rm -f $(BIN)
+	cargo clean 2>/dev/null || true

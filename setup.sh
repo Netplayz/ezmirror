@@ -55,21 +55,17 @@ done
 
 "$PYTHON" "${EZMIRROR_ROOT}/python/setup.py" "${ARGS[@]}"
 
-# Build C daemon (optional, silents failure)
-if command -v gcc >/dev/null; then
-  hdr "C Daemon"
-  DAEMON_SRC="${EZMIRROR_ROOT}/src"
-  if [[ -f "${DAEMON_SRC}/main.c" ]]; then
-    gcc -O2 -Wall -pthread \
-      -o /usr/local/sbin/ezmirord \
-      "${DAEMON_SRC}/main.c" \
-      "${DAEMON_SRC}/config.c" \
-      "${DAEMON_SRC}/sync.c" \
-      "${DAEMON_SRC}/status.c" \
-      "${DAEMON_SRC}/metrics.c" 2>/dev/null && \
-      ok "ezmirord compiled" || \
-      warn "C daemon build failed (non-critical)"
+# Build daemon (if cargo is available)
+hdr "Daemon"
+if command -v cargo >/dev/null; then
+  if make build 2>/dev/null && [[ -x "${EZMIRROR_ROOT}/ezmirord" ]]; then
+    install -m 755 "${EZMIRROR_ROOT}/ezmirord" /usr/local/sbin/ezmirord
+    ok "ezmirord built (Rust)"
+  else
+    warn "Daemon build failed (non-critical)"
   fi
+else
+  warn "cargo not found, skipping daemon build"
 fi
 
 # Post-install summary

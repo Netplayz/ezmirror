@@ -1,4 +1,5 @@
 ezmirord
+target/
 *.o
 *.pyc
 __pycache__/

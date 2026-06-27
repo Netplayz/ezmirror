@@ -52,11 +52,13 @@ def load_mirrors():
         return json.load(f)
 
 
-def run(cmd, check=True, silent=False):
+def run(cmd, check=True, silent=False, cwd=None):
     kwargs = {}
     if silent:
         kwargs["stdout"] = subprocess.DEVNULL
         kwargs["stderr"] = subprocess.DEVNULL
+    if cwd:
+        kwargs["cwd"] = cwd
     if check:
         subprocess.run(cmd, **kwargs, check=True)
     else:
@@ -326,19 +328,17 @@ def write_alert_conf(webhook: str = "", email: str = ""):
 
 
 def build_daemon():
-    src_dir = EZMIRROR_ROOT / "src"
-    if not (src_dir / "main.c").exists():
-        warn("C daemon source not found, skipping build")
+    cargo_toml = EZMIRROR_ROOT / "Cargo.toml"
+    if not cargo_toml.exists():
+        warn("Cargo.toml not found, skipping Rust build")
         return False
-    info("Building ezmirord...")
-    run(["gcc", "-O2", "-Wall", "-pthread",
-         "-o", str(DAEMON_BIN),
-         str(src_dir / "main.c"),
-         str(src_dir / "config.c"),
-         str(src_dir / "sync.c"),
-         str(src_dir / "status.c"),
-         str(src_dir / "metrics.c")],
-        silent=True)
+    if not shutil.which("cargo"):
+        warn("cargo not found, skipping daemon build")
+        return False
+    info("Building ezmirord (Rust)...")
+    run(["cargo", "build", "--release"], cwd=str(EZMIRROR_ROOT), silent=True)
+    shutil.copy2(EZMIRROR_ROOT / "target" / "release" / "ezmirord", DAEMON_BIN)
+    DAEMON_BIN.chmod(0o755)
     ok(f"ezmirord ({DAEMON_BIN})")
     return True
 
