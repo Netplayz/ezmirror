@@ -1,20 +1,15 @@
 ARG DEBIAN_VERSION=bookworm
 
-# Stage 1: Build the C daemon
-FROM debian:${DEBIAN_VERSION} AS builder
+# Stage 1: Build the Rust daemon
+FROM rust:${DEBIAN_VERSION} AS builder
 
-RUN apt-get update -qq && \
-    apt-get install -y -qq gcc libc6-dev 2>/dev/null && \
-    rm -rf /var/lib/apt/lists/*
-
-COPY src/ /tmp/src/
-RUN gcc -O2 -Wall -pthread \
-    -o /tmp/ezmirord \
-    /tmp/src/main.c \
-    /tmp/src/config.c \
-    /tmp/src/sync.c \
-    /tmp/src/status.c \
-    /tmp/src/metrics.c && \
+WORKDIR /build
+COPY Cargo.toml Cargo.lock* ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs && \
+    cargo build --release 2>/dev/null || true
+COPY src/ src/
+RUN cargo build --release && \
+    cp target/release/ezmirord /tmp/ezmirord && \
     strip /tmp/ezmirord
 
 # Stage 2: Runtime image
