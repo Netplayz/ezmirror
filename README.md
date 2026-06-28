@@ -4,8 +4,8 @@
 </p>
 
 <p align="center">
-  <img src="https://nyarchlinux.moe/nyarch-logo.png" width="22" height="22" alt="Nyarch" />&nbsp;
-  <img alt="Used and Trusted By Nyarch" src="https://img.shields.io/badge/Used%20and%20Trusted%20By-Nyarch-5865F2" />
+  <img src="https://nyarchlinux.moe/nyarch-logo.png" width="32" height="32" alt="Nyarch" />&nbsp;
+  <img alt="Used and Trusted By Nyarch" src="https://img.shields.io/badge/Used%20and%20Trusted%20By-Nyarch-5865F2?style=for-the-badge" />
 </p>
 
 Self-hostable Linux distribution mirror infrastructure. Mirrors served at `/{slug}/` via nginx fancyindex. Rust daemon for sync scheduling and Prometheus metrics. Python admin panel for management.
