@@ -9,6 +9,10 @@
   <img src="https://avatars.githubusercontent.com/u/294323269?s=32" width="22" height="22" alt="AurumOS" />&nbsp;
   <img alt="Used and Trusted By AurumOS" src="https://img.shields.io/badge/Used%20and%20Trusted%20By-AurumOS-FFD700?style=for-the-badge" /><br>
   <img alt="Used and Trusted by SCP 3008" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%203008-8B0000?style=for-the-badge" /><br>
+  <img alt="Used and Trusted by SCP 999" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20999-FF69B4?style=for-the-badge" /><br>
+  <img alt="Used and Trusted by SCP 294" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20294-00CED1?style=for-the-badge" /><br>
+  <img alt="Used and Trusted by SCP 914" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20914-B8860B?style=for-the-badge" /><br>
+  <img alt="Used and Trusted by SCP 131" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20131-FF8C00?style=for-the-badge" /><br>
   <img src="https://templeos.org/Logo128x152.jpg" width="22" height="22" alt="TempleOS" />&nbsp;
   <img alt="In Memory of Terry Davis" src="https://img.shields.io/badge/In%20Memory%20of-Terry%20Davis%20%F0%9F%95%8A-808080?style=for-the-badge" />
 </p>
