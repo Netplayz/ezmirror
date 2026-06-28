@@ -36,10 +36,8 @@
   <img alt="Used and Trusted by My Therapist" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-My%20Therapist-6B8E8B?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/c/ce/Walmart_cashier_%2850988221266%29.png" width="22" height="22" alt="The Cashier at Walmart" />&nbsp;
   <img alt="Used and Trusted by The Cashier at Walmart" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-The%20Cashier%20at%20Walmart-0071CE?style=for-the-badge" /><br>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/f/fd/The_Crypto_Supercycle._Keynote_Speech_by_Monty_Metzger._CEO_at_LCX.jpg" width="22" height="22" alt="A Crypto Bro" />&nbsp;
-  <img alt="Used and Trusted by A Crypto Bro" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-A%20Crypto%20Bro-F7931A?style=for-the-badge" /><br>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/d/df/Full_moon_partially_obscured_by_atmosphere.jpg" width="22" height="22" alt="The Moon" />&nbsp;
-  <img alt="Used and Trusted by The Moon" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-The%20Moon-C0C0C0?style=for-the-badge" /><br>
+   <img src="https://upload.wikimedia.org/wikipedia/commons/d/df/Full_moon_partially_obscured_by_atmosphere.jpg" width="22" height="22" alt="The Moon" />&nbsp;
+   <img alt="Used and Trusted by The Moon" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-The%20Moon-C0C0C0?style=for-the-badge" /><br>
   <img src="https://images.unsplash.com/photo-1769107300458-1788c3587724?fm=jpg&q=60&w=3000&auto=format&fit=crop" width="22" height="22" alt="My Ex" />&nbsp;
   <img alt="Used and Trusted by My Ex" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-My%20Ex-FF4444?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/5/50/Toaster.png" width="22" height="22" alt="A Sentient Toaster" />&nbsp;
@@ -56,8 +54,7 @@
   <img alt="Used and Trusted by My Sleep Paralysis Demon" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-My%20Sleep%20Paralysis%20Demon-2F2F4F?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Japanese_drink_vending_machine%282%29.jpg" width="22" height="22" alt="A Vending Machine" />&nbsp;
   <img alt="Used and Trusted by A Vending Machine" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-A%20Vending%20Machine-4169E1?style=for-the-badge" /><br>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Furry_alley_cat_%28Unsplash%29.jpg" width="22" height="22" alt="The Neighborhood Cat" />&nbsp;
-  <img alt="Used and Trusted by The Neighborhood Cat" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-The%20Neighborhood%20Cat-FF8C00?style=for-the-badge" /><br>
+
   <img src="https://upload.wikimedia.org/wikipedia/commons/3/39/Restoring_sanity_-_Reddit.jpg" width="22" height="22" alt="A Reddit Mod" />&nbsp;
   <img alt="Used and Trusted by A Reddit Mod" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-A%20Reddit%20Mod-FF4500?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/9/99/National_Security_Agency_seal.png" width="22" height="22" alt="The NSA" />&nbsp;
@@ -74,8 +71,7 @@
   <img alt="Used and Trusted by The Raccoons in My Trash" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-The%20Raccoons%20in%20My%20Trash-696969?style=for-the-badge" /><br>
    <img src="https://upload.wikimedia.org/wikipedia/commons/b/bb/Plants.jpg" width="22" height="22" alt="My Plants" />&nbsp;
    <img alt="Used and Trusted by My Plants (they're judging me)" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-My%20Plants%20%28they%27re%20judging%20me%29-32CD32?style=for-the-badge" /><br>
-   <img src="https://upload.wikimedia.org/wikipedia/commons/1/15/Antique_friendly_robot_%2825395309126%29.jpg" width="22" height="22" alt="A AI Chatbot" />&nbsp;
-  <img alt="Used and Trusted by A AI Chatbot" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-A%20AI%20Chatbot-8A2BE2?style=for-the-badge" /><br>
+
   <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Canadian_Squirrel_%287629711782%29.jpg" width="22" height="22" alt="The Squirrel from Ice Age" />&nbsp;
   <img alt="Used and Trusted by The Squirrel from Ice Age" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-The%20Squirrel%20from%20Ice%20Age-CD853F?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Dust_bunnies.jpg" width="22" height="22" alt="A Dust Bunny Under My Bed" />&nbsp;
