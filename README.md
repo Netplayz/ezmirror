@@ -8,11 +8,20 @@
   <img alt="Used and Trusted By Nyarch" src="https://img.shields.io/badge/Used%20and%20Trusted%20By-Nyarch-5865F2?style=for-the-badge" /><br>
   <img src="https://avatars.githubusercontent.com/u/294323269?s=32" width="22" height="22" alt="AurumOS" />&nbsp;
   <img alt="Used and Trusted By AurumOS" src="https://img.shields.io/badge/Used%20and%20Trusted%20By-AurumOS-FFD700?style=for-the-badge" /><br>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" width="22" height="22" alt="SCP" />&nbsp;
   <img alt="Used and Trusted by SCP 3008" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%203008-8B0000?style=for-the-badge" /><br>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" width="22" height="22" alt="SCP" />&nbsp;
   <img alt="Used and Trusted by SCP 999" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20999-FF69B4?style=for-the-badge" /><br>
+  <img src="https://scp-wiki.wdfiles.com/local--files/scp-294/scp_294_by_staticfactory-d4xwn6e.jpg" width="22" height="22" alt="SCP-294" />&nbsp;
   <img alt="Used and Trusted by SCP 294" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20294-00CED1?style=for-the-badge" /><br>
+  <img src="https://scp-wiki.wdfiles.com/local--files/scp-914/gears.jpg" width="22" height="22" alt="SCP-914" />&nbsp;
   <img alt="Used and Trusted by SCP 914" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20914-B8860B?style=for-the-badge" /><br>
+  <img src="https://scp-wiki.wdfiles.com/local--files/scp-131/131volgun.png" width="22" height="22" alt="SCP-131" />&nbsp;
   <img alt="Used and Trusted by SCP 131" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20131-FF8C00?style=for-the-badge" /><br>
+  <img src="https://scp-wiki.wdfiles.com/local--files/scp-1471/scp1471.jpg" width="22" height="22" alt="Mal0" />&nbsp;
+  <img alt="Used and Trusted by Mal0" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Mal0-2F4F4F?style=for-the-badge" /><br>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Microwave_oven.jpg" width="22" height="22" alt="Microwave" />&nbsp;
+  <img alt="Used and Trusted by my Grandmas Microwave" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-my%20Grandmas%20Microwave-DAA520?style=for-the-badge" /><br>
   <img src="https://templeos.org/Logo128x152.jpg" width="22" height="22" alt="TempleOS" />&nbsp;
   <img alt="In Memory of Terry Davis" src="https://img.shields.io/badge/In%20Memory%20of-Terry%20Davis%20%F0%9F%95%8A-808080?style=for-the-badge" />
 </p>
