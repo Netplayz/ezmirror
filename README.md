@@ -20,7 +20,7 @@
   <img alt="Used and Trusted by SCP 131" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20131-FF8C00?style=for-the-badge" /><br>
   <img src="https://characterphotos.yodayo.com/86c88af0-4a96-44b7-b456-ec5bb83d3f54.png" width="22" height="22" alt="Mal0" />&nbsp;
   <img alt="Used and Trusted by Mal0" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Mal0-2F4F4F?style=for-the-badge" /><br>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Jeffrey_Epstein,_27.jpg" width="22" height="22" alt="Jeffrey Epstein" />&nbsp;
+  <img src="https://img.semafor.com/8794afb89a6cd0d9aceaf0f5762737655c8b6ccb-4660x3495.png?w=740&q=75&auto=format&h=555" width="22" height="22" alt="Jeffrey Epstein" />&nbsp;
   <img alt="Used and Trusted by Jeffrey Epstein" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Jeffrey%20Epstein-8B4513?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Donald_Trump_hair_from_above_and_behind.jpg" width="22" height="22" alt="Donald Trump" />&nbsp;
   <img alt="Used and Trusted by Donald Trump" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Donald%20Trump-DC143C?style=for-the-badge" /><br>
