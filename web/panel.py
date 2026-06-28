@@ -41,6 +41,7 @@ class MirrorCreate(BaseModel):
     description: str = ""
     upstream: str = ""
     method: str = "rsync"
+    origin: bool = False
     size: str = ""
     warn: str = ""
     interval: str = "6h"
@@ -253,6 +254,9 @@ def api_create_mirror(m: MirrorCreate):
 
     d = m.model_dump()
     d["slug"] = slug
+    if d.pop("origin", False):
+        d["method"] = "original"
+        d["upstream"] = ""
     d.setdefault("method", "rsync")
     d.setdefault("interval", "6h")
 
@@ -396,6 +400,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .tag-error{background:rgba(248,81,73,.15);color:var(--red)}
 .tag-warn{background:rgba(210,153,34,.15);color:var(--yellow)}
 .tag-idle{background:rgba(79,140,255,.15);color:var(--accent)}
+.card-origin{border-left:2px solid var(--accent)}
+.origin-badge{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
 .section{margin-bottom:24px}
 .section h2{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
 .log-viewer{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-family:var(--mono);font-size:12px;max-height:400px;overflow-y:auto;white-space:pre-wrap;line-height:1.6}
@@ -461,10 +467,16 @@ pre.raw-json{background:var(--bg);border:1px solid var(--border);border-radius:6
         <input class="form-input" id="f-desc" placeholder="Stable, testing, and unstable">
       </div>
       <div class="form-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="f-origin" onchange="toggleOrigin()">
+          <span>Local origin mirror (no upstream)</span>
+        </label>
+      </div>
+      <div class="form-row" id="upstream-row">
         <label>Upstream</label>
         <input class="form-input" id="f-upstream" placeholder="rsync://rsync.debian.org/debian/">
       </div>
-      <div class="form-row">
+      <div class="form-row" id="method-row">
         <label>Method</label>
         <select class="form-input" id="f-method"><option value="rsync">rsync</option><option value="rclone">rclone</option></select>
       </div>
@@ -513,6 +525,8 @@ pre.raw-json{background:var(--bg);border:1px solid var(--border);border-radius:6
 .form-input[type=number]{width:120px}
 .form-hint{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:2px;display:block}
 select.form-input{appearance:none;cursor:pointer}
+.checkbox-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);padding:4px 0}
+.checkbox-label input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
 </style>
 
 <script>
@@ -615,11 +629,12 @@ function render() {
   let html = '<div class="grid" id="mirror-grid">';
   for (const m of filtered) {
     const disk = formatBytes(m.disk_bytes);
-    html += '<div class="card">' +
+    const isOrigin = m.method === 'original' || m.origin;
+    html += '<div class="card' + (isOrigin ? ' card-origin' : '') + '">' +
       '<div class="card-header">' +
         '<div>' +
-          '<div class="card-title">' + m.slug + '</div>' +
-          '<div class="card-subtitle">' + m.name + ' — ' + m.method + '</div>' +
+          '<div class="card-title">' + m.slug + (isOrigin ? ' <span class="origin-badge">origin</span>' : '') + '</div>' +
+          '<div class="card-subtitle">' + m.name + ' — ' + (isOrigin ? 'local origin' : m.method) + '</div>' +
         '</div>' +
         '<div>' + statusTag(m.status) + '</div>' +
       '</div>' +
@@ -672,14 +687,15 @@ function showDetail(slug) {
     const codeTag = code === 0 ? '<span class="tag tag-ok">0</span>' :
                     code === -1 ? '<span class="tag tag-idle">-</span>' :
                     '<span class="tag tag-error">' + code + '</span>';
+    const isOrigin = detail.method === 'original' || detail.origin;
     app.innerHTML =
       '<button class="btn" onclick="refresh(); window.location.hash=\'\'" style="margin-bottom:16px">&larr; Back</button>' +
       '<div class="detail-grid">' +
         '<div class="detail-sidebar">' +
-          '<h2>' + detail.slug + '</h2>' +
+          '<h2>' + detail.slug + (isOrigin ? ' <span class="origin-badge">origin</span>' : '') + '</h2>' +
           '<div class="info-row"><span class="info-label">Name</span><span>' + escapeHtml(detail.name) + '</span></div>' +
-          '<div class="info-row"><span class="info-label">Method</span><span>' + detail.method + '</span></div>' +
-          '<div class="info-row"><span class="info-label">Upstream</span><span style="font-family:var(--mono);font-size:12px;word-break:break-all">' + escapeHtml(detail.upstream) + '</span></div>' +
+          '<div class="info-row"><span class="info-label">Method</span><span>' + (isOrigin ? 'local origin' : detail.method) + '</span></div>' +
+          (isOrigin ? '' : '<div class="info-row"><span class="info-label">Upstream</span><span style="font-family:var(--mono);font-size:12px;word-break:break-all">' + escapeHtml(detail.upstream) + '</span></div>') +
           '<div class="info-row"><span class="info-label">Interval</span><span>' + detail.interval + '</span></div>' +
           '<div class="info-row"><span class="info-label">Status</span><span>' + statusTag(detail.status) + '</span></div>' +
           '<div class="info-row"><span class="info-label">Exit Code</span><span>' + codeTag + '</span></div>' +
@@ -707,10 +723,18 @@ function showCreate() {
   document.getElementById('create-error').textContent = '';
   document.getElementById('create-btn').disabled = false;
   document.getElementById('create-btn').textContent = 'Create';
+  document.getElementById('f-origin').checked = false;
+  toggleOrigin();
 }
 
 function hideCreate() {
   document.getElementById('create-modal').classList.add('hidden');
+}
+
+function toggleOrigin() {
+  const origin = document.getElementById('f-origin').checked;
+  document.getElementById('upstream-row').style.display = origin ? 'none' : '';
+  document.getElementById('method-row').style.display = origin ? 'none' : '';
 }
 
 async function createMirror() {
@@ -726,6 +750,7 @@ async function createMirror() {
     description: document.getElementById('f-desc').value,
     upstream: document.getElementById('f-upstream').value,
     method: document.getElementById('f-method').value,
+    origin: document.getElementById('f-origin').checked,
     interval: document.getElementById('f-interval').value,
     size: document.getElementById('f-size').value,
     bandwidth: parseInt(document.getElementById('f-bandwidth').value) || 0,

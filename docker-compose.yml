@@ -9,7 +9,7 @@ services:
       - "80:80"
     environment:
       EZMIRROR_LAB_NAME: "MyOrg Docker Mirror"
-      EZMIRROR_DOMAIN: "mirror.example.com"
+      EZMIRROR_DOMAIN: "localhost"
       EZMIRROR_LOCATION: "Docker, US"
       EZMIRROR_GH_USER: "netplayz"
       # Comma-separated slugs to mirror (empty = all in mirrors.json)
