@@ -4,9 +4,10 @@
 </p>
 
 <p align="left">
-  <img src="https://nyarchlinux.moe/nyarch-logo.png" width="28" height="28" alt="Nyarch" />&nbsp;
-  <img src="https://avatars.githubusercontent.com/u/294323269?s=32" width="28" height="28" alt="AurumOS" />&nbsp;
-  <img alt="Used and Trusted By Nyarch and AurumOS" src="https://img.shields.io/badge/Used%20and%20Trusted%20By-Nyarch%20%26%20AurumOS-5865F2?style=for-the-badge" />
+  <img src="https://nyarchlinux.moe/nyarch-logo.png" width="22" height="22" alt="Nyarch" />&nbsp;
+  <img alt="Used and Trusted By Nyarch" src="https://img.shields.io/badge/Used%20and%20Trusted%20By-Nyarch-5865F2?style=for-the-badge" /><br>
+  <img src="https://avatars.githubusercontent.com/u/294323269?s=32" width="22" height="22" alt="AurumOS" />&nbsp;
+  <img alt="Used and Trusted By AurumOS" src="https://img.shields.io/badge/Used%20and%20Trusted%20By-AurumOS-FFD700?style=for-the-badge" />
 </p>
 
 Self-hostable Linux distribution mirror infrastructure. Mirrors served at `/{slug}/` via nginx fancyindex. Rust daemon for sync scheduling and Prometheus metrics. Python admin panel for management.
