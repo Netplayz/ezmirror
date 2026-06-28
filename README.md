@@ -21,6 +21,7 @@
   <img src="https://characterphotos.yodayo.com/86c88af0-4a96-44b7-b456-ec5bb83d3f54.png" width="22" height="22" alt="Mal0" />&nbsp;
   <img alt="Used and Trusted by Mal0" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Mal0-2F4F4F?style=for-the-badge" /><br>
   <img src="https://preview.redd.it/psbattle-trump-having-a-bad-day-at-the-office-v0-hougkvn1qhne1.jpeg?width=1080&crop=smart&auto=webp&s=0ea7aafddde33c1e20fe0faca5ca788c492eecb0" width="22" height="22" alt="Donald Trump" />&nbsp;
+  <img alt="Used and Trusted by Donald Trump" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Donald%20Trump-DC143C?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/India_-_Delhi_portrait_of_a_man_-_4780.jpg" width="22" height="22" alt="Indian Guy" />&nbsp;
   <img alt="Used and Trusted by Random Indian Guy on YouTube" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Random%20Indian%20Guy%20on%20YouTube-FF9933?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Microwave_oven_flashon.jpg" width="22" height="22" alt="Microwave" />&nbsp;
