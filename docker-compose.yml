@@ -12,7 +12,7 @@ services:
       EZMIRROR_DOMAIN: "localhost"
       EZMIRROR_LOCATION: "Docker, US"
       EZMIRROR_GH_USER: "netplayz"
-      # Comma-separated slugs to mirror (empty = all in mirrors.json)
+      # Comma-separated slugs to pre-select (empty = start with no mirrors; add via admin panel)
       EZMIRROR_MIRRORS: ""
       # Storage path inside container (bind mount below)
       EZMIRROR_VOLUME: "/var/www/html"

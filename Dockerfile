@@ -24,6 +24,7 @@ RUN apt-get update -qq && \
         python3 \
         python3-pip \
         ca-certificates \
+        apache2-utils \
     && \
     pip3 install -q --break-system-packages fastapi uvicorn && \
     rm -rf /var/lib/apt/lists/* && \

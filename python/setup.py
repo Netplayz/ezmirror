@@ -594,13 +594,17 @@ def main():
 
     # 2. Mirror selection
     selected = []
-    if unattended and not os.environ.get("EZMIRROR_MIRRORS"):
+    mirrors_env = os.environ.get("EZMIRROR_MIRRORS")
+    if unattended and mirrors_env is None:
         selected = list(mirrors)
         info(f"Unattended: selecting all {len(selected)} mirrors")
-    elif os.environ.get("EZMIRROR_MIRRORS"):
-        slugs = [s.strip() for s in os.environ["EZMIRROR_MIRRORS"].split(",")]
-        selected = [m for m in mirrors if m["slug"] in slugs]
-        info(f"Mirrors (env): {[m['slug'] for m in selected]}")
+    elif mirrors_env is not None:
+        if mirrors_env.strip():
+            slugs = [s.strip() for s in mirrors_env.split(",")]
+            selected = [m for m in mirrors if m["slug"] in slugs]
+            info(f"Mirrors (env): {[m['slug'] for m in selected]}")
+        else:
+            info("EZMIRROR_MIRRORS is set but empty — no mirrors pre-selected")
     else:
         # Interactive selection
         print(f"\n{B}  Mirror Selection{N}")
@@ -619,8 +623,10 @@ def main():
             indices = [int(x) for x in choice.split() if x.isdigit()]
             selected = [mirrors[i-1] for i in indices if 1 <= i <= len(mirrors)]
 
-    if not selected:
+    if not selected and not unattended:
         die("No mirrors selected. Re-run to select mirrors.")
+    elif not selected:
+        info("No mirrors selected — starting with an empty catalog")
 
     # 3. Volume
     mirror_dir = Path(os.environ.get("EZMIRROR_VOLUME", "/var/www/html"))
