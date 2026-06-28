@@ -35,6 +35,15 @@ if [[ ! -f "${CONF_DIR}/mirrors.conf" ]]; then
     echo "-> Setup complete."
 fi
 
+# Ensure .htpasswd exists (even on subsequent runs)
+if [[ -n "${EZMIRROR_ADMIN_USER:-}" && -n "${EZMIRROR_ADMIN_PASS:-}" ]]; then
+    if [[ ! -f "${CONF_DIR}/.htpasswd" ]]; then
+        echo "-> Creating admin .htpasswd..."
+        htpasswd -cb "${CONF_DIR}/.htpasswd" "${EZMIRROR_ADMIN_USER}" "${EZMIRROR_ADMIN_PASS}"
+        chmod 600 "${CONF_DIR}/.htpasswd"
+    fi
+fi
+
 # Ensure site symlink exists on subsequent runs too
 [[ -L /etc/nginx/sites-enabled/default ]] || ln -sf "${NGINX_CONF}" /etc/nginx/sites-enabled/default
 
