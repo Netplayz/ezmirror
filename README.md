@@ -26,6 +26,8 @@
   <img alt="Used and Trusted by Donald Trump" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Donald%20Trump-DC143C?style=for-the-badge" /><br>
   <img src="https://media.gettyimages.com/id/84655155/photo/celebrity-sightings-in-new-york-february-4-2009.jpg?s=1024x1024&w=gi&k=20&c=ag74Tp4jutOKGcbdoON9a3SN9WGsnWyg5vaHZvC0PL0=" width="22" height="22" alt="Diddy" />&nbsp;
   <img alt="Used and Trusted by Diddy" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Diddy-8B0000?style=for-the-badge" /><br>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/India_-_Delhi_portrait_of_a_man_-_4780.jpg" width="22" height="22" alt="Indian Guy" />&nbsp;
+  <img alt="Used and Trusted by Random Indian Guy on YouTube" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Random%20Indian%20Guy%20on%20YouTube-FF9933?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Microwave_oven_flashon.jpg" width="22" height="22" alt="Microwave" />&nbsp;
   <img alt="Used and Trusted by my Grandmas Microwave" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-my%20Grandmas%20Microwave-DAA520?style=for-the-badge" /><br>
   <img src="https://templeos.org/Logo128x152.jpg" width="22" height="22" alt="TempleOS" />&nbsp;
