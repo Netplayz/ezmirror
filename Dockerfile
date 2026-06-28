@@ -15,8 +15,8 @@ RUN cargo build --release && \
 # Stage 2: Runtime image
 FROM debian:${DEBIAN_VERSION}-slim
 
-RUN sudo apt-get update -qq && \
-    sudo apt-get install -y -qq --no-install-recommends \
+RUN apt-get update -qq && \
+    apt-get install -y -qq --no-install-recommends \
         nginx \
         nginx-extras \
         rsync \
@@ -27,7 +27,7 @@ RUN sudo apt-get update -qq && \
         python3-pip \
         ca-certificates \
     && \
-    pip3 install -q fastapi uvicorn && \
+    pip3 install -q --break-system-packages fastapi uvicorn && \
     rm -rf /var/lib/apt/lists/* && \
     rm -f /etc/nginx/sites-enabled/default
 
