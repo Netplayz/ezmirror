@@ -72,8 +72,8 @@
   <img alt="Used and Trusted by A NPC in GTA" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-A%20NPC%20in%20GTA-2E8B57?style=for-the-badge" /><br>
   <img src="https://images.unsplash.com/photo-1711930189493-c906826b87dc?fm=jpg&q=60&w=3000&auto=format&fit=crop" width="22" height="22" alt="The Raccoons in My Trash" />&nbsp;
   <img alt="Used and Trusted by The Raccoons in My Trash" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-The%20Raccoons%20in%20My%20Trash-696969?style=for-the-badge" /><br>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/b/bb/Plants.jpg" width="22" height="22" alt="My Plants" />&nbsp;
-  <img alt="Used and Trusted by My Plants (they're judging me)" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-My%20Plants%20%28they%27re%20judging%20me%29-32CD32?style=for-the-badge" /><br>
+   <img src="https://upload.wikimedia.org/wikipedia/commons/b/bb/Plants.jpg" width="22" height="22" alt="My Plants" />&nbsp;
+   <img alt="Used and Trusted by My Plants (they're judging me)" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-My%20Plants%20%28they%27re%20judging%20me%29-32CD32?style=for-the-badge" /><br>
    <img src="https://upload.wikimedia.org/wikipedia/commons/1/15/Antique_friendly_robot_%2825395309126%29.jpg" width="22" height="22" alt="A AI Chatbot" />&nbsp;
   <img alt="Used and Trusted by A AI Chatbot" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-A%20AI%20Chatbot-8A2BE2?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Canadian_Squirrel_%287629711782%29.jpg" width="22" height="22" alt="The Squirrel from Ice Age" />&nbsp;
