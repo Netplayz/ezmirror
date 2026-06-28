@@ -144,7 +144,7 @@ def reload_nginx() -> dict:
     result = subprocess.run(["nginx", "-t"], capture_output=True, text=True)
     if result.returncode != 0:
         return {"ok": False, "error": result.stderr.strip()}
-    subprocess.run(["systemctl", "reload", "nginx"], capture_output=True)
+    subprocess.run(["nginx", "-s", "reload"], capture_output=True)
     return {"ok": True, "error": ""}
 
 

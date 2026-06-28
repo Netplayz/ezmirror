@@ -61,7 +61,7 @@ trap cleanup SIGTERM SIGINT
 
 # Start ezmirord in foreground
 echo "-> Starting ezmirord..."
-/usr/local/sbin/ezmirord --foreground &
+/usr/local/sbin/ezmirord &
 EZMIRORD_PID=$!
 
 echo "-> ezmirror running (nginx pid=${NGINX_PID}, ezmirord pid=${EZMIRORD_PID}, panel pid=${PANEL_PID})"
