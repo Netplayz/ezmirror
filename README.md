@@ -12,6 +12,8 @@
   <img alt="In Memory of Terry Davis" src="https://img.shields.io/badge/In%20Memory%20of-Terry%20Davis%20%F0%9F%95%8A-808080?style=for-the-badge" />
 </p>
 
+_This project is made in memory of Terry A. Davis (1969–2018)._
+
 Self-hostable Linux distribution mirror infrastructure. Mirrors served at `/{slug}/` via nginx fancyindex. Rust daemon for sync scheduling and Prometheus metrics. Python admin panel for management.
 
 ```bash
