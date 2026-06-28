@@ -38,7 +38,7 @@ COPY python/ /opt/ezmirror/python/
 COPY web/ /opt/ezmirror/web/
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-RUN chmod +x /usr/local/sbin/ezmirord /usr/local/bin/docker-entrypoint.sh && \
+RUN chmod +x /usr/local/sbin/ezmirord /usr/local/bin/docker-entrypoint.sh /opt/ezmirror/web/panel.py && \
     mkdir -p /etc/ezmirror /var/www/html /var/log /var/run
 
 EXPOSE 80
