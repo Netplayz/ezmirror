@@ -594,10 +594,10 @@ def main():
 
     # 2. Mirror selection
     selected = []
-    if unattended and "EZMIRROR_MIRRORS" not in os.environ:
+    if unattended and not os.environ.get("EZMIRROR_MIRRORS"):
         selected = list(mirrors)
         info(f"Unattended: selecting all {len(selected)} mirrors")
-    elif "EZMIRROR_MIRRORS" in os.environ:
+    elif os.environ.get("EZMIRROR_MIRRORS"):
         slugs = [s.strip() for s in os.environ["EZMIRROR_MIRRORS"].split(",")]
         selected = [m for m in mirrors if m["slug"] in slugs]
         info(f"Mirrors (env): {[m['slug'] for m in selected]}")
