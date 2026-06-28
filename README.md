@@ -74,7 +74,7 @@
   <img alt="Used and Trusted by The Raccoons in My Trash" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-The%20Raccoons%20in%20My%20Trash-696969?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/5/54/Lepelplant_16.JPG" width="22" height="22" alt="My Plants" />&nbsp;
   <img alt="Used and Trusted by My Plants (they're judging me)" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-My%20Plants%20%28they%27re%20judging%20me%29-32CD32?style=for-the-badge" /><br>
-  <img src="https://images.unsplash.com/photo-1773381537370-4387ada2112a?fm=jpg&q=60&w=3000&auto=format&fit=crop" width="22" height="22" alt="A AI Chatbot" />&nbsp;
+   <img src="https://upload.wikimedia.org/wikipedia/commons/1/15/Antique_friendly_robot_%2825395309126%29.jpg" width="22" height="22" alt="A AI Chatbot" />&nbsp;
   <img alt="Used and Trusted by A AI Chatbot" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-A%20AI%20Chatbot-8A2BE2?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Delmenhorst_Maxx_Scrat.jpg" width="22" height="22" alt="The Squirrel from Ice Age" />&nbsp;
   <img alt="Used and Trusted by The Squirrel from Ice Age" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-The%20Squirrel%20from%20Ice%20Age-CD853F?style=for-the-badge" /><br>
