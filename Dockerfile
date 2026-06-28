@@ -15,8 +15,8 @@ RUN cargo build --release && \
 # Stage 2: Runtime image
 FROM debian:${DEBIAN_VERSION}-slim
 
-RUN apt-get update -qq && \
-    apt-get install -y -qq --no-install-recommends \
+RUN sudo apt-get update -qq && \
+    sudo apt-get install -y -qq --no-install-recommends \
         nginx \
         nginx-extras \
         rsync \
