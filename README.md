@@ -20,9 +20,9 @@
   <img alt="Used and Trusted by SCP 131" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20131-FF8C00?style=for-the-badge" /><br>
   <img src="https://characterphotos.yodayo.com/86c88af0-4a96-44b7-b456-ec5bb83d3f54.png" width="22" height="22" alt="Mal0" />&nbsp;
   <img alt="Used and Trusted by Mal0" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Mal0-2F4F4F?style=for-the-badge" /><br>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Jeffrey_Epstein%2C_27_%28cropped%29.jpg" width="22" height="22" alt="Jeffrey Epstein" />&nbsp;
+  <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Jeffrey_Epstein,_27.jpg" width="22" height="22" alt="Jeffrey Epstein" />&nbsp;
   <img alt="Used and Trusted by Jeffrey Epstein" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Jeffrey%20Epstein-8B4513?style=for-the-badge" /><br>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/8/8b/Donald_Trump_hair_from_above_and_behind.jpg" width="22" height="22" alt="Donald Trump" />&nbsp;
+  <img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Donald_Trump_hair_from_above_and_behind.jpg" width="22" height="22" alt="Donald Trump" />&nbsp;
   <img alt="Used and Trusted by Donald Trump" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Donald%20Trump-DC143C?style=for-the-badge" /><br>
   <img src="https://media.gettyimages.com/id/84655155/photo/celebrity-sightings-in-new-york-february-4-2009.jpg?s=1024x1024&w=gi&k=20&c=ag74Tp4jutOKGcbdoON9a3SN9WGsnWyg5vaHZvC0PL0=" width="22" height="22" alt="Diddy" />&nbsp;
   <img alt="Used and Trusted by Diddy" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Diddy-8B0000?style=for-the-badge" /><br>
