@@ -8,8 +8,8 @@
   <img alt="Used and Trusted By Nyarch" src="https://img.shields.io/badge/Used%20and%20Trusted%20By-Nyarch-5865F2?style=for-the-badge" /><br>
   <img src="https://avatars.githubusercontent.com/u/294323269?s=32" width="22" height="22" alt="AurumOS" />&nbsp;
   <img alt="Used and Trusted By AurumOS" src="https://img.shields.io/badge/Used%20and%20Trusted%20By-AurumOS-FFD700?style=for-the-badge" /><br>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/d/d2/Terry_A._Davis_%28cropped%29.jpg" width="22" height="22" alt="Terry Davis" />&nbsp;
-  <img alt="Trusted By Terry Davis" src="https://img.shields.io/badge/Trusted%20By-Terry%20Davis-2ea44f?style=for-the-badge" />
+  <img src="https://templeos.org/Logo128x152.jpg" width="22" height="22" alt="TempleOS" />&nbsp;
+  <img alt="In Memory of Terry Davis" src="https://img.shields.io/badge/In%20Memory%20of-Terry%20Davis%20%F0%9F%95%8A-808080?style=for-the-badge" />
 </p>
 
 Self-hostable Linux distribution mirror infrastructure. Mirrors served at `/{slug}/` via nginx fancyindex. Rust daemon for sync scheduling and Prometheus metrics. Python admin panel for management.
