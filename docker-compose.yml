@@ -12,6 +12,9 @@ services:
       EZMIRROR_DOMAIN: "localhost"
       EZMIRROR_LOCATION: "Docker, US"
       EZMIRROR_GH_USER: "netplayz"
+      # Admin panel credentials
+      EZMIRROR_ADMIN_USER: "admin"
+      EZMIRROR_ADMIN_PASS: "admin"
       # Comma-separated slugs to pre-select (empty = start with no mirrors; add via admin panel)
       EZMIRROR_MIRRORS: ""
       # Storage path inside container (bind mount below)
