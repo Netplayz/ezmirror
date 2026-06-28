@@ -40,7 +40,7 @@ if [[ -n "${EZMIRROR_ADMIN_USER:-}" && -n "${EZMIRROR_ADMIN_PASS:-}" ]]; then
     if [[ ! -f "${CONF_DIR}/.htpasswd" ]]; then
         echo "-> Creating admin .htpasswd..."
         htpasswd -cb "${CONF_DIR}/.htpasswd" "${EZMIRROR_ADMIN_USER}" "${EZMIRROR_ADMIN_PASS}"
-        chmod 600 "${CONF_DIR}/.htpasswd"
+        chmod 644 "${CONF_DIR}/.htpasswd"
     fi
 fi
 
