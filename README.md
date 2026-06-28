@@ -19,6 +19,11 @@ sudo bash setup.sh
 - [Configuration reference](docs/configuration.md)
 - [Agent instructions](AGENTS.md)
 
+  ## Screenshots
+  <img width="1860" height="928" alt="image" src="https://github.com/user-attachments/assets/6e1265a7-ab9c-4362-ad27-8b727b0eea5d" />
+  <img width="1866" height="929" alt="image" src="https://github.com/user-attachments/assets/627af626-3bd4-4d65-b9ce-65f5734e2c2e" />
+
+
 ## License
 
 GPL-3.0
