@@ -55,4 +55,4 @@ GPL-3.0
 
 ---
 
-*SCP-related images sourced from the [SCP Foundation wiki](https://scp-wiki.wikidot.com) (CC BY-SA 3.0). Microwave photo by Wrightmt (public domain). Nyarch logo © Nyarch Linux. TempleOS logo (public domain).*
+*SCP-294 image by StaticFactory, SCP-914 image by Thomas Claveirole, SCP-131 image by VolgunStrife, SCP-1471 image by Tanagryph, SCP Foundation emblem by far2 — all sourced from the [SCP Foundation wiki](https://scp-wiki.wikidot.com) (CC BY-SA 3.0). Microwave photo by Wrightmt (public domain). Nyarch logo © Nyarch Linux. TempleOS logo (public domain).*
