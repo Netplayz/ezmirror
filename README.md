@@ -20,7 +20,7 @@
   <img alt="Used and Trusted by SCP 131" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20131-FF8C00?style=for-the-badge" /><br>
   <img src="https://scp-wiki.wdfiles.com/local--files/scp-1471/scp1471.jpg" width="22" height="22" alt="Mal0" />&nbsp;
   <img alt="Used and Trusted by Mal0" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Mal0-2F4F4F?style=for-the-badge" /><br>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Microwave_oven.jpg" width="22" height="22" alt="Microwave" />&nbsp;
+  <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Microwave_oven_flashon.jpg" width="22" height="22" alt="Microwave" />&nbsp;
   <img alt="Used and Trusted by my Grandmas Microwave" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-my%20Grandmas%20Microwave-DAA520?style=for-the-badge" /><br>
   <img src="https://templeos.org/Logo128x152.jpg" width="22" height="22" alt="TempleOS" />&nbsp;
   <img alt="In Memory of Terry Davis" src="https://img.shields.io/badge/In%20Memory%20of-Terry%20Davis%20%F0%9F%95%8A-808080?style=for-the-badge" />
@@ -52,3 +52,7 @@ sudo bash setup.sh
 ## License
 
 GPL-3.0
+
+---
+
+*SCP-related images sourced from the [SCP Foundation wiki](https://scp-wiki.wikidot.com) (CC BY-SA 3.0). Microwave photo by Wrightmt (public domain). Nyarch logo © Nyarch Linux. TempleOS logo (public domain).*
