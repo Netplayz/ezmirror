@@ -18,8 +18,7 @@
   <img alt="Used and Trusted by SCP 914" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20914-B8860B?style=for-the-badge" /><br>
   <img src="https://scp-wiki.wdfiles.com/local--files/scp-131/131volgun.png" width="22" height="22" alt="SCP-131" />&nbsp;
   <img alt="Used and Trusted by SCP 131" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP%20131-FF8C00?style=for-the-badge" /><br>
-  <img src="https://characterphotos.yodayo.com/86c88af0-4a96-44b7-b456-ec5bb83d3f54.png" width="22" height="22" alt="Mal0" />&nbsp;
-  <img alt="Used and Trusted by Mal0" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-Mal0-2F4F4F?style=for-the-badge" /><br>
+  <img alt="Used and Trusted by SCP-1471" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-SCP-1471-2F4F4F?style=for-the-badge" /><br>
   <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Microwave_oven_flashon.jpg" width="22" height="22" alt="Microwave" />&nbsp;
   <img alt="Used and Trusted by my Grandmas Microwave" src="https://img.shields.io/badge/Used%20and%20Trusted%20by-my%20Grandmas%20Microwave-DAA520?style=for-the-badge" /><br>
   <img src="https://templeos.org/Logo128x152.jpg" width="22" height="22" alt="TempleOS" />&nbsp;
@@ -55,4 +54,4 @@ GPL-3.0
 
 ---
 
-*SCP-294 image by StaticFactory, SCP-914 image by Thomas Claveirole, SCP-131 image by VolgunStrife, SCP-1471 image by Tanagryph, SCP Foundation emblem by far2 — all sourced from the [SCP Foundation wiki](https://scp-wiki.wikidot.com) (CC BY-SA 3.0). Microwave photo by Wrightmt (public domain). Nyarch logo © Nyarch Linux. TempleOS logo (public domain).*
+*SCP-294 image by StaticFactory, SCP-914 image by Thomas Claveirole, SCP-131 image by VolgunStrife, SCP Foundation emblem by far2 — all sourced from the [SCP Foundation wiki](https://scp-wiki.wikidot.com) (CC BY-SA 3.0). Microwave photo by Wrightmt (public domain). Nyarch logo © Nyarch Linux. TempleOS logo (public domain).*
