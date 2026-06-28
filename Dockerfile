@@ -4,9 +4,7 @@ ARG DEBIAN_VERSION=bookworm
 FROM rust:${DEBIAN_VERSION} AS builder
 
 WORKDIR /build
-COPY Cargo.toml Cargo.lock* ./
-RUN mkdir src && echo "fn main() {}" > src/main.rs && \
-    cargo build --release 2>/dev/null || true
+COPY Cargo.toml Cargo.lock ./
 COPY src/ src/
 RUN cargo build --release && \
     cp target/release/ezmirord /tmp/ezmirord && \
